@@ -1,0 +1,1885 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Albert Shop</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    :root {
+      --bg:#000; --surface:#111; --surface2:#1a1a1a; --border:#222;
+      --error:#ff3b30; --text:#fff; --text-secondary:#8e8e93;
+      --accent:#2f80ed; --green:#24b24b; --radius:16px; --radius-sm:12px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    html,body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;}
+    .screen{display:none;padding-bottom:96px;}
+    .screen.active{display:block;}
+
+    /* SPLASH / LOADING SCREEN */
+    #splashScreen{position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.35s ease;}
+    #splashScreen.hide{opacity:0;pointer-events:none;}
+    .splash-logo{width:84px;height:84px;border-radius:22px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;overflow:hidden;}
+    .splash-logo img{width:100%;height:100%;object-fit:cover;}
+    .splash-name{font-size:19px;font-weight:800;letter-spacing:-0.3px;}
+    .splash-dots{display:flex;gap:5px;}
+    .splash-dots span{width:6px;height:6px;border-radius:50%;background:var(--text-secondary);animation:splashBounce 1.1s infinite ease-in-out;}
+    .splash-dots span:nth-child(2){animation-delay:0.15s;}
+    .splash-dots span:nth-child(3){animation-delay:0.3s;}
+    @keyframes splashBounce{0%,80%,100%{opacity:0.3;transform:translateY(0);}40%{opacity:1;transform:translateY(-3px);}}
+    .splash-label{font-size:12px;color:var(--text-secondary);}
+    .splash-bar-track{width:140px;height:3px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+    .splash-bar-fill{height:100%;width:0%;background:var(--accent);border-radius:3px;animation:splashFill 1s ease forwards;}
+    @keyframes splashFill{to{width:100%;}}
+
+    /* SHARE BUTTON IN PRODUCT DETAILS */
+.details-share-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.details-share-btn {
+  width: 46px;
+  height: 46px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.details-share-btn:active {
+  background: #292929;
+  transform: scale(0.96);
+}
+
+.details-share-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  width: min(360px, calc(100vw - 32px));
+  display: none;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 13px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.6);
+  z-index: 150;
+}
+
+.details-share-menu.show {
+  display: grid;
+}
+
+.details-share-option {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 12px 8px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.details-share-option:active {
+  background: #292929;
+}
+
+.details-share-option svg {
+  flex-shrink: 0;
+}
+    /* HEADER */
+    .header{display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 10px;position:sticky;top:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(20px);z-index:100;border-bottom:1px solid rgba(255,255,255,0.04);}
+    .header-title{font-size:16px;font-weight:800;letter-spacing:-0.2px;}
+    .header-right{display:flex;align-items:center;gap:10px;}
+    .header-avatar{width:34px;height:34px;background:linear-gradient(135deg,#2f80ed,#3cc98d);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 0 0 2px rgba(255,255,255,0.06);overflow:hidden;}
+    .header-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+
+    /* HEADER "..." MENU */
+    .header-menu-wrap{position:relative;}
+    .btn-header-menu{background:none;border:none;color:#fff;cursor:pointer;width:30px;height:34px;display:flex;align-items:center;justify-content:center;}
+    .header-menu-dropdown{position:absolute;top:42px;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);min-width:190px;padding:6px;display:none;flex-direction:column;z-index:150;box-shadow:0 10px 30px rgba(0,0,0,0.5);}
+    .header-menu-dropdown.show{display:flex;}
+    .header-menu-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;font-size:13px;font-weight:600;color:#fff;text-decoration:none;cursor:pointer;background:none;border:none;text-align:left;font-family:inherit;width:100%;}
+    .header-menu-item:hover{background:var(--surface2);}
+    .header-menu-item span.hm-ic{font-size:15px;width:18px;text-align:center;flex-shrink:0;}
+
+    /* FILTERS MODAL */
+    .fmodal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.93);display:none;align-items:flex-end;justify-content:center;z-index:300;backdrop-filter:blur(10px);}
+    .fmodal-overlay.show{display:flex;}
+    .fmodal{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;width:100%;max-width:560px;padding:20px 18px calc(18px + env(safe-area-inset-bottom,0px));max-height:85vh;overflow-y:auto;}
+    .fmodal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+    .fmodal-title{font-size:17px;font-weight:800;}
+    .btn-fmodal-close{background:var(--surface2);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:15px;cursor:pointer;}
+    .fmodal-section-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;color:var(--text-secondary);margin:16px 0 9px;}
+    .fmodal-section-title:first-of-type{margin-top:0;}
+    .fpill-row{display:flex;flex-wrap:wrap;gap:8px;}
+    .fpill{background:var(--surface2);border:1px solid var(--border);color:#fff;padding:9px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;}
+    .fpill.active{background:var(--accent);border-color:var(--accent);}
+    .fpill.brand-active{background:#fff;color:#000;border-color:#fff;}
+    .fcat-search{width:100%;background:var(--bg);border:1px solid var(--border);color:#fff;padding:10px 12px;border-radius:var(--radius-sm);font-size:13px;outline:none;font-family:inherit;margin-bottom:9px;}
+    .btn-fmodal-apply{width:100%;background:var(--accent);color:#fff;border:none;padding:15px;border-radius:var(--radius-sm);font-size:14px;font-weight:800;cursor:pointer;margin-top:20px;}
+    .btn-fmodal-reset{width:100%;background:none;border:1px solid var(--border);color:var(--text-secondary);padding:12px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;margin-top:9px;}
+    .btn-admin-header{display:none;background:rgba(47,128,237,0.15);color:var(--accent);border:1px solid rgba(47,128,237,0.3);padding:6px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;}
+    .btn-fav-header{position:relative;background:none;border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;width:34px;height:34px;}
+    .fav-badge{position:absolute;top:-3px;right:-3px;background:#ff3b30;color:#fff;font-size:10px;font-weight:700;width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #000;}
+
+    /* HERO LOGO BANNER */
+    .hero-banner{width:100%;position:relative;overflow:hidden;background:linear-gradient(180deg,#1e5f17 0%,#0a130a 55%,#000 100%);min-height:240px;display:flex;align-items:flex-end;}
+    .hero-banner img{display:none;}
+    .hero-banner-overlay{position:absolute;inset:0;background:radial-gradient(circle at 50% 20%, rgba(139,255,160,0.22), transparent 34%), linear-gradient(180deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.24) 45%, rgba(0,0,0,0.8) 100%);pointer-events:none;}
+    .hero-content{position:relative;z-index:1;padding:18px 20px 48px;}
+    @media (max-width: 480px){
+      .hero-banner{min-height:210px;}
+    }
+    .hero-eyebrow{font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,0.7);margin-bottom:8px;}
+    .hero-title{font-size:32px;line-height:0.9;font-weight:900;letter-spacing:-0.7px;margin-bottom:0;text-shadow:0 2px 18px rgba(0,0,0,0.4);}
+    .hero-subtitle{font-size:13px;font-weight:600;color:rgba(255,255,255,0.8);margin-top:6px;margin-bottom:0;}
+    .hero-cta{display:none;}
+
+    /* SHOP CARD (reference layout) */
+    .hero-banner{margin:calc(12px + env(safe-area-inset-top,0px)) 14px 0;width:auto;border-radius:24px;min-height:190px;border:1px solid rgba(255,255,255,0.06);}
+    .shop-card{display:flex;justify-content:space-between;align-items:flex-start;padding:0 18px;margin-top:-30px;position:relative;z-index:2;}
+    .shop-logo{width:78px;height:78px;border-radius:50%;background:linear-gradient(135deg,#2f80ed,#3cc98d);border:3px solid #000;overflow:hidden;flex-shrink:0;}
+    .shop-logo img{width:100%;height:100%;object-fit:cover;display:block;}
+    .shop-actions{display:flex;gap:10px;padding-top:46px;}
+    .shop-act{position:relative;width:48px;height:48px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+    .shop-act:active{background:#292929;}
+    .shop-title-block{padding:10px 18px 0;}
+    .shop-eyebrow{font-size:11px;font-weight:800;letter-spacing:1.2px;color:var(--accent);margin-bottom:4px;}
+    .shop-name{font-size:30px;font-weight:900;letter-spacing:-0.6px;}
+
+    /* DARK BANNER WITH SHOP NAME (reference look) */
+    .hero-banner{background:radial-gradient(ellipse at 50% 55%,#0b1220 0%,#05080f 55%,#020409 100%);border:1px solid rgba(255,255,255,0.09);border-radius:20px;min-height:0;height:170px;align-items:center;justify-content:center;box-shadow:none;}
+    .hero-banner .hero-banner-overlay{background:none;}
+    .hero-banner .hero-content{padding:0;text-align:center;}
+    .hero-name{display:flex;flex-direction:column;align-items:center;font-weight:900;font-size:34px;line-height:1.05;letter-spacing:1px;}
+    .hero-name{-webkit-box-reflect:below 4px linear-gradient(to bottom,transparent 45%,rgba(255,255,255,0.28));margin-top:-18px;}
+    .hero-banner .hero-banner-overlay{background:linear-gradient(180deg,rgba(255,255,255,0) 62%,rgba(255,255,255,0.05) 100%);}
+    .hero-name .l1{color:#2f80ed;}
+    .hero-name .l2{color:#fff;}
+    .hero-name span.ch{display:inline-block;opacity:0;transform:translateY(8px);animation:chIn .55s ease forwards,hop 3.4s cubic-bezier(.3,.7,.4,1) infinite;}
+    @keyframes hop{0%{transform:translateY(0) scale(1,1);}6%{transform:translateY(1px) scale(1.08,.9);}16%{transform:translateY(-11px) scale(.96,1.06);}28%{transform:translateY(0) scale(1.08,.9);}36%{transform:translateY(0) scale(1,1);}100%{transform:translateY(0) scale(1,1);}}
+    @media (prefers-reduced-motion:reduce){.hero-name span.ch{animation:chIn .01s forwards;}}
+    @keyframes chIn{to{opacity:1;transform:none;}}
+    /* LOGO + BUTTONS ON TOP OF THE BANNER */
+    .hero-banner{height:222px;position:relative;}
+    .hero-banner .shop-card{position:absolute;top:12px;left:0;right:0;margin:0;padding:0 14px;align-items:center;z-index:6;}
+    .hero-banner .shop-logo{width:62px;height:62px;border:2px solid rgba(255,255,255,0.18);}
+    .hero-banner .shop-actions{padding-top:0;gap:9px;}
+    .hero-banner .shop-act{width:44px;height:44px;background:rgba(18,22,32,0.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+    .hero-banner .hero-content{margin-top:20px;}
+    .shop-title-block{padding-top:14px;}
+    /* MENU PILLS */
+    .menu-pills{display:flex;gap:6px;overflow-x:auto;padding:10px 16px 2px;scrollbar-width:none;}
+    .menu-pills::-webkit-scrollbar{display:none;}
+    .menu-pill{flex-shrink:0;display:inline-flex;align-items:center;background:var(--surface2);border:1px solid var(--border);color:#fff;padding:7px 13px;border-radius:16px;font:600 12px Inter,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap;}
+    .menu-pill:active{background:#292929;}
+
+    /* SEARCH */
+    .search-container{padding:14px 16px;display:flex;gap:8px;}
+    .search-bar{flex:1;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;}
+    .search-bar svg{flex-shrink:0;color:var(--text-secondary);}
+    .search-bar input{flex:1;background:none;border:none;outline:none;color:#fff;font-size:15px;font-family:inherit;}
+    .search-bar input::placeholder{color:var(--text-secondary);}
+    .btn-filters{position:relative;flex-shrink:0;width:46px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;}
+    .btn-filters.has-active{border-color:var(--accent);color:var(--accent);}
+    .filters-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--accent);display:none;}
+    .btn-filters.has-active .filters-dot{display:block;}
+
+    /* CATEGORY SLIDER */
+    .section-head{font-size:17px;font-weight:800;padding:12px 16px 8px;}
+    .cat-slider-wrapper{display:flex;align-items:center;gap:8px;padding:0 16px 14px;}
+    .cat-row{display:flex;gap:8px;scroll-behavior:smooth;scrollbar-width:none;flex:1;min-width:0;overflow-x:auto;align-items:stretch;}
+    .cat-row::-webkit-scrollbar{display:none;}
+    .cat-item{flex-shrink:0;width:92px;height:88px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:14px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;overflow:hidden;padding:8px 6px;transition:all 0.2s ease;}
+    .cat-item.active{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.14);}
+    .cat-item img{display:none;}
+    .cat-item-no-img{display:none;}
+    .cat-item-title{font-size:9px;font-weight:800;text-transform:uppercase;color:#fff;text-align:center;letter-spacing:0.5px;line-height:1.15;word-break:break-word;}
+    .cat-item.active .cat-item-title{color:#fff;}
+
+    /* PRODUCTS GRID */
+    .grid-container{padding:0 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+    .prod-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;position:relative;}
+    .prod-img-box{width:100%;aspect-ratio:3/4;position:relative;cursor:pointer;}
+    .prod-img-box img{width:100%;height:100%;object-fit:cover;}
+    .prod-sold-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:5;background:rgba(0,0,0,0.38);pointer-events:none;}
+    .prod-sold-label{background:#ff3b30;color:#fff;font-size:13px;font-weight:800;padding:7px 18px;border-radius:20px;letter-spacing:0.6px;text-transform:uppercase;box-shadow:0 4px 16px rgba(0,0,0,0.45);}
+    .prod-heart-btn{position:absolute;top:8px;right:8px;width:30px;height:30px;background:rgba(0,0,0,0.35);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:4;backdrop-filter:blur(4px);}
+    .prod-heart-btn.active svg{fill:#ff3b30;stroke:#ff3b30;}
+    .prod-menu-btn{position:absolute;top:8px;left:8px;width:30px;height:30px;background:rgba(0,0,0,0.35);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:4;backdrop-filter:blur(4px);color:#fff;}
+    .prod-menu-dropdown{position:absolute;top:42px;left:8px;background:#1a1a1a;border:1px solid var(--border);border-radius:12px;overflow:hidden;z-index:20;display:none;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,0.55);}
+    .prod-menu-dropdown.show{display:block;}
+    .prod-menu-item{padding:11px 14px;font-size:12.5px;font-weight:600;color:#fff;cursor:pointer;display:flex;align-items:center;gap:8px;}
+    .prod-menu-item:hover{background:var(--surface2);}
+    .prod-menu-item:not(:last-child){border-bottom:1px solid var(--border);}
+    .prod-details{padding:10px 11px 11px;}
+    .prod-title{font-size:13px;font-weight:600;line-height:1.3;height:34px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:5px;cursor:pointer;}
+    .prod-meta-line{font-size:11px;color:var(--text-secondary);font-weight:600;margin-bottom:4px;}
+    .prod-price{font-size:15px;font-weight:800;margin-bottom:9px;}
+    .prod-card-actions{display:flex;gap:7px;}
+    .btn-card-cart{flex:1;background:var(--surface2);border:1px solid var(--border);color:#fff;padding:9px 0;border-radius:var(--radius-sm);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .btn-card-cart:disabled{opacity:0.35;cursor:not-allowed;}
+    .btn-card-fav{width:38px;height:38px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+    .btn-card-fav.active svg{fill:#ff3b30;stroke:#ff3b30;}
+
+    /* DETAILS */
+    .back-nav{display:inline-flex;align-items:center;gap:6px;margin:14px 16px 4px;padding:8px 14px 8px 10px;cursor:pointer;font-weight:700;font-size:13px;color:#fff;background:var(--surface2);border:1px solid var(--border);border-radius:20px;}
+    /* When Telegram's native Back Button is available we hide our in-page
+       fallback pill to avoid showing two back controls at once. */
+    body.has-native-back .back-nav{display:none;}
+    .slider-viewport{width:100%;aspect-ratio:1/1;position:relative;overflow:hidden;background:#0a0a0a;}
+    .slider-track{display:flex;width:100%;height:100%;transition:transform 0.3s ease-in-out;}
+    .slider-img-slide{min-width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
+    .slider-img-slide img{width:100%;height:100%;object-fit:contain;}
+    .slider-arrow{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.1);border-radius:50%;color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:5;}
+    .slider-arrow.prev{left:14px;}.slider-arrow.next{right:14px;}
+    .slider-dots-indicator{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:5;background:rgba(0,0,0,0.5);padding:4px 10px;border-radius:12px;}
+    .slider-dot-node{width:6px;height:6px;background:rgba(255,255,255,0.4);border-radius:50%;}
+    .slider-dot-node.active{background:#fff;width:14px;border-radius:3px;}
+    .details-body{padding:18px 16px;}
+    .details-badge{background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;text-transform:uppercase;}
+    .details-sold-badge{background:#ff3b30;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:8px;text-transform:uppercase;margin-left:6px;}
+    .details-title{font-size:21px;font-weight:800;margin-bottom:8px;}
+    .details-desc{font-size:14px;color:#b3b3b3;line-height:1.6;white-space:pre-line;margin-bottom:18px;}
+    .details-characteristics{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:18px;}
+    .char-row{display:flex;justify-content:space-between;font-size:14px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+    .char-row:last-child{border:none;}
+    .char-label{color:var(--text-secondary);}
+    .char-val.green{color:var(--green);font-weight:600;}
+    .char-val.red{color:#ff3b30;font-weight:600;}
+    .size-section-title{font-size:14px;font-weight:700;margin-bottom:9px;}
+    .size-buttons-container{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:22px;}
+    .size-btn{background:var(--surface);border:1px solid var(--border);color:#fff;padding:9px 18px;border-radius:var(--radius-sm);font-weight:600;font-size:14px;cursor:pointer;transition:all 0.2s;}
+    .size-btn.selected{background:#fff;color:#000;border-color:#fff;}
+    .questions-box{border-top:1px solid var(--border);padding-top:18px;margin-bottom:120px;}
+    .questions-title{font-size:15px;font-weight:700;margin-bottom:11px;}
+    .btn-seller-chat{width:100%;background:var(--surface);border:1px solid var(--border);color:#fff;padding:13px;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;}
+
+    /* CONTACT CARD (БЫСТРАЯ СВЯЗЬ) */
+    .contact-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 18px;margin-bottom:220px;}
+    .contact-eyebrow{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--green);margin-bottom:12px;}
+    .contact-eyebrow-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
+    .contact-heading{font-size:19px;font-weight:800;line-height:1.25;letter-spacing:-0.3px;margin-bottom:10px;}
+    .contact-text{font-size:13px;color:var(--text-secondary);line-height:1.55;margin-bottom:16px;}
+    .bottom-buy-panel{position:fixed;bottom:calc(66px + env(safe-area-inset-bottom,0px));left:0;right:0;background:rgba(10,10,10,0.96);border-top:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;z-index:90;backdrop-filter:blur(20px);}
+    .panel-price-info{display:flex;flex-direction:column;}
+    .panel-price-val{font-size:21px;font-weight:900;}
+    .btn-add-to-cart{flex:1;background:var(--accent);color:#fff;border:none;padding:15px;border-radius:var(--radius-sm);font-size:15px;font-weight:700;cursor:pointer;text-align:center;}
+    .btn-add-to-cart:disabled{background:#333;color:#666;cursor:not-allowed;}
+
+    /* CART */
+    .cart-item-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px;display:flex;gap:11px;margin:0 16px 10px;align-items:center;transition:border-color 0.15s;}
+    .cart-item-card.selected{border-color:var(--accent);}
+    .cart-select-btn{flex-shrink:0;width:22px;height:22px;border-radius:50%;border:2px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .cart-select-btn.checked{background:var(--accent);border-color:var(--accent);}
+    .cart-item-img{width:62px;height:62px;border-radius:var(--radius-sm);object-fit:cover;background:#222;}
+    .cart-item-info{flex:1;}
+    .cart-item-title{font-size:13px;font-weight:600;margin-bottom:3px;line-height:1.3;}
+    .cart-item-meta{font-size:11px;color:var(--text-secondary);margin-bottom:5px;}
+    .cart-item-price{font-size:14px;font-weight:700;margin-bottom:7px;}
+    .cart-controls{display:flex;align-items:center;gap:10px;}
+    .cart-qty-btn{width:30px;height:30px;background:var(--surface2);border:1px solid var(--border);color:#fff;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .cart-qty-num{font-size:14px;font-weight:700;min-width:16px;text-align:center;}
+
+    /* DETAILS QUANTITY STEPPER */
+    .details-qty-stepper{display:flex;align-items:center;gap:0;background:var(--surface2);border:1px solid var(--border);border-radius:12px;height:46px;flex-shrink:0;overflow:hidden;}
+    .details-qty-btn{width:38px;height:100%;background:none;border:none;color:#fff;font-size:18px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .details-qty-btn:active{background:rgba(255,255,255,0.08);}
+    .details-qty-btn:disabled{opacity:0.35;cursor:not-allowed;}
+    .details-qty-num{min-width:22px;text-align:center;font-size:15px;font-weight:700;}
+    .cart-delete-text{color:#ff3b30;font-size:12px;font-weight:600;cursor:pointer;margin-left:auto;}
+    .checkout-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin:16px 16px;}
+    .form-group{margin-bottom:14px;}
+    .form-label{font-size:12px;font-weight:700;color:#fff;margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:0.3px;}
+    .form-label span{color:var(--error);}
+    .form-input{width:100%;background:var(--bg);border:1px solid var(--border);color:#fff;padding:11px 13px;border-radius:var(--radius-sm);font-size:14px;outline:none;font-family:inherit;}
+    .form-input.invalid-field{border-color:var(--error)!important;}
+    .form-select{width:100%;background:var(--bg);border:1px solid var(--border);color:#fff;padding:11px 13px;border-radius:var(--radius-sm);font-size:14px;outline:none;font-family:inherit;}
+    .summary-bar{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-top:1px solid var(--border);margin-top:16px;}
+    .summary-label{font-size:15px;font-weight:700;}
+    .summary-total{font-size:20px;font-weight:900;}
+    .btn-submit-order{width:calc(100% - 32px);margin:0 16px;background:#2f80ed;color:#fff;border:none;padding:15px;border-radius:var(--radius-sm);font-size:15px;font-weight:700;cursor:pointer;}
+
+    /* PAYMENT */
+    .payment-sub-title{font-size:14px;font-weight:600;color:#fff;padding:14px 16px 8px;}
+    .pay-methods-list{padding:0 16px;display:flex;flex-direction:column;gap:12px;}
+    .pay-card{background:#0d0d0d;border:1px solid var(--border);border-radius:var(--radius);padding:22px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;text-align:center;min-height:130px;transition:border-color 0.15s;}
+    .pay-card:active{border-color:#444;}
+    .pay-icon-wrap{margin-bottom:12px;}
+    .pay-card-title{font-size:14px;font-weight:600;}
+    .pay-details-box{margin:24px 16px;border-top:1px solid var(--border);padding-top:16px;}
+    .pay-details-head{font-size:13px;color:var(--text-secondary);margin-bottom:10px;font-weight:600;}
+    .pay-prod-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:7px;color:var(--text-secondary);}
+    .pay-prod-name{color:#fff;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .info-note{background:rgba(255,204,0,0.08);border:1px solid rgba(255,204,0,0.24);border-radius:12px;padding:12px 14px;margin:0 0 18px;line-height:1.5;font-size:12.5px;color:#f3f3f3;}
+    .info-note strong{color:#ffcc00;font-weight:800;}
+    .info-note a{color:#fff;text-decoration:none;font-weight:700;}
+    .payment-note{background:rgba(47,128,237,0.08);border:1px solid rgba(47,128,237,0.22);border-radius:12px;padding:12px 14px;margin:12px 16px 0;line-height:1.5;font-size:12.5px;color:#f4f4f4;}
+    .payment-note strong{color:#7eb3ff;font-weight:800;}
+    .payment-note a{color:#fff;text-decoration:none;font-weight:700;}
+    .pay-alert-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.88);display:none;align-items:center;justify-content:center;padding:24px;z-index:200;backdrop-filter:blur(10px);}
+    .pay-alert-overlay.show{display:flex;}
+    .pay-alert-modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:100%;max-width:340px;text-align:center;}
+    .pay-alert-icon{font-size:34px;margin-bottom:12px;}
+    .pay-alert-text{font-size:14px;font-weight:600;line-height:1.5;margin-bottom:22px;}
+    .btn-alert-contact{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--accent);color:#fff;border:none;padding:13px;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;margin-bottom:9px;}
+    .btn-alert-close{width:100%;background:none;border:1px solid var(--border);color:var(--text-secondary);padding:11px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;}
+
+    /* FAB */
+    .fab-cart{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom,0px));right:16px;width:54px;height:54px;background:var(--accent);border-radius:50%;border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:99;box-shadow:0 4px 20px rgba(47,128,237,0.4);}
+
+    /* BOTTOM TASK BAR */
+    .bottom-tab-bar{position:fixed;left:0;right:0;bottom:0;display:flex;background:rgba(9,9,9,0.98);border-top:1px solid var(--border);backdrop-filter:blur(20px);padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));z-index:120;}
+    .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--text-secondary);font-family:inherit;font-size:10px;font-weight:600;cursor:pointer;padding:5px 0 4px;position:relative;}
+    .tab-item.active{color:#fff;}
+    .tab-icon-wrap{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;transition:background 0.15s;}
+    .tab-item.active .tab-icon-wrap{background:rgba(255,255,255,0.08);}
+    .tab-icon-wrap svg{stroke:currentColor;}
+    .tab-badge{position:absolute;top:-2px;right:16px;background:#ff3b30;color:#fff;font-size:9px;font-weight:700;width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #000;}
+    .tab-item .tab-badge{display:none;}
+    .tab-item.has-badge .tab-badge{display:flex;}
+
+    /* PROFILE */
+    .profile-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px;margin:0 16px 14px;display:flex;align-items:center;gap:14px;}
+    .profile-avatar-big{width:52px;height:52px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;flex-shrink:0;overflow:hidden;}
+    .profile-avatar-big img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+    .profile-name{font-size:17px;font-weight:800;margin-bottom:2px;}
+    .profile-username{font-size:12px;color:var(--text-secondary);margin-bottom:3px;}
+    .profile-since{font-size:11px;color:var(--text-secondary);}
+    .profile-phone-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px 16px;margin:0 16px 8px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-secondary);}
+    .profile-active-badge{margin:0 16px 18px;background:rgba(255,204,0,0.1);border:1px solid rgba(255,204,0,0.3);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#ffcc00;}
+    .profile-summary-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin:0 16px 12px;}
+    .profile-summary-title{font-size:11px;letter-spacing:1.1px;text-transform:uppercase;color:var(--text-secondary);font-weight:800;margin-bottom:10px;}
+    .profile-summary-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px;}
+    .profile-summary-row:last-child{border-bottom:none;}
+    .profile-summary-label{color:var(--text-secondary);}
+    .profile-summary-value{font-weight:700;color:#fff;}
+    .profile-contact-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:calc(100% - 32px);margin:0 16px 14px;background:var(--accent);color:#fff;border:none;padding:13px;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;}
+    .faq-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin:0 16px 18px;}
+    .faq-title{font-size:15px;font-weight:800;margin-bottom:12px;}
+    .faq-item{padding:10px 0;border-top:1px solid rgba(255,255,255,0.04);}
+    .faq-item:first-child{border-top:none;padding-top:0;}
+    .faq-q{font-size:13px;font-weight:700;margin-bottom:5px;color:#fff;}
+    .faq-a{font-size:12.5px;color:var(--text-secondary);line-height:1.55;}
+    .orders-section-head{display:flex;justify-content:space-between;align-items:center;padding:4px 16px 10px;font-size:16px;font-weight:800;}
+    .orders-count-badge{font-size:12px;font-weight:600;color:var(--text-secondary);}
+    .order-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin:0 16px 10px;padding:14px;}
+    .order-id{font-size:14px;font-weight:700;}
+    .order-date{font-size:11px;color:var(--text-secondary);margin-bottom:9px;}
+    .order-status-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px;}
+    .order-badge{padding:4px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+    .badge-yellow{background:rgba(255,204,0,0.15);color:#ffcc00;border:1px solid rgba(255,204,0,0.3);}
+    .badge-blue{background:rgba(47,128,237,0.15);color:#2f80ed;border:1px solid rgba(47,128,237,0.3);}
+    .badge-green{background:rgba(36,178,75,0.15);color:#24b24b;border:1px solid rgba(36,178,75,0.3);}
+    .badge-red{background:rgba(255,59,48,0.15);color:#ff3b30;border:1px solid rgba(255,59,48,0.3);}
+    .order-meta-row{font-size:11px;color:var(--text-secondary);margin-bottom:3px;}
+    .order-divider{border:none;border-top:1px solid var(--border);margin:10px 0;}
+    .order-product-row{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+    .order-product-img{width:38px;height:38px;border-radius:7px;object-fit:cover;background:#222;}
+    .order-product-name{font-size:12px;font-weight:600;color:#ccc;flex:1;}
+    .order-product-qty{font-size:11px;color:var(--text-secondary);}
+    .order-total-row{display:flex;justify-content:space-between;align-items:center;}
+    .order-total-price{font-size:17px;font-weight:900;}
+    .order-total-items{font-size:12px;color:var(--text-secondary);}
+    .order-actions{display:flex;gap:7px;margin-top:10px;}
+    .btn-order-pay{flex:1;background:var(--accent);color:#fff;border:none;padding:10px;border-radius:var(--radius-sm);font-size:12px;font-weight:700;cursor:pointer;}
+    .btn-order-cancel{flex:1;background:rgba(255,59,48,0.1);color:#ff3b30;border:1px solid rgba(255,59,48,0.3);padding:10px;border-radius:var(--radius-sm);font-size:12px;font-weight:700;cursor:pointer;}
+    .profile-empty{text-align:center;padding:40px 16px;color:var(--text-secondary);font-size:14px;}
+
+    /* FAVOURITES */
+    .fav-empty{text-align:center;padding:60px 16px;color:var(--text-secondary);}
+    .fav-empty-icon{font-size:46px;margin-bottom:10px;}
+    .fav-empty-text{font-size:15px;font-weight:700;color:#fff;margin-bottom:5px;}
+    .fav-category-bar{display:flex;gap:8px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none;}
+    .fav-category-bar::-webkit-scrollbar{display:none;}
+    .fav-category-pill{flex-shrink:0;background:var(--surface);border:1px solid var(--border);color:#fff;padding:8px 12px;border-radius:18px;font-size:12px;font-weight:700;cursor:pointer;}
+    .fav-category-pill.active{background:#fff;color:#000;border-color:#fff;}
+
+    /* ADMIN */
+    .admin-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:14px 16px;}
+    .admin-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px;}
+    .admin-stat-label{font-size:10px;color:var(--text-secondary);text-transform:uppercase;font-weight:700;margin-bottom:3px;letter-spacing:0.5px;}
+    .admin-stat-val{font-size:22px;font-weight:900;}
+    .admin-section-head{font-size:15px;font-weight:800;padding:6px 16px 10px;display:flex;align-items:center;justify-content:space-between;}
+    .btn-admin-add{background:var(--accent);color:#fff;border:none;padding:8px 15px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;cursor:pointer;}
+    .admin-prod-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin:0 16px 9px;padding:13px;display:grid;grid-template-columns:52px 1fr auto;gap:11px;align-items:center;}
+    .admin-prod-img{width:52px;height:52px;border-radius:9px;object-fit:cover;background:var(--surface2);}
+    .admin-prod-placeholder{width:52px;height:52px;border-radius:9px;background:var(--surface2);border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;}
+    .admin-prod-name{font-size:13px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .admin-prod-meta{font-size:11px;color:var(--text-secondary);margin-bottom:4px;}
+    .admin-prod-tags{display:flex;gap:4px;flex-wrap:wrap;}
+    .atag{padding:2px 6px;border-radius:20px;font-size:10px;font-weight:700;}
+    .atag-cat{background:rgba(47,128,237,0.15);color:var(--accent);border:1px solid rgba(47,128,237,0.3);}
+    .atag-price{background:rgba(36,178,75,0.15);color:#24b24b;border:1px solid rgba(36,178,75,0.3);}
+    .atag-size{background:var(--surface2);color:var(--text-secondary);border:1px solid var(--border);}
+    .atag-sold{background:rgba(255,59,48,0.15);color:#ff3b30;border:1px solid rgba(255,59,48,0.3);}
+    .admin-prod-btns{display:flex;flex-direction:column;gap:5px;}
+    .btn-a-edit{background:var(--surface2);border:1px solid var(--border);color:#fff;padding:5px 10px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;}
+    .btn-a-del{background:rgba(255,59,48,0.1);border:1px solid rgba(255,59,48,0.3);color:#ff3b30;padding:5px 10px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;}
+
+    /* ADMIN MODAL */
+    .amodal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.93);display:none;align-items:flex-start;justify-content:center;padding:14px;z-index:300;overflow-y:auto;backdrop-filter:blur(10px);}
+    .amodal-overlay.show{display:flex;}
+    .amodal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:500px;padding:22px;margin:auto;}
+    .amodal-title{font-size:16px;font-weight:800;margin-bottom:18px;}
+    .aform-group{margin-bottom:13px;}
+    .aform-label{font-size:11px;font-weight:700;color:#aaa;margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:0.4px;}
+    .aform-label span{color:#ff3b30;}
+    .aform-input,.aform-textarea,.aform-select{width:100%;background:var(--bg);border:1px solid var(--border);color:#fff;padding:10px 12px;border-radius:var(--radius-sm);font-size:14px;outline:none;font-family:inherit;}
+    .aform-textarea{resize:vertical;min-height:75px;}
+    .aform-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .aform-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+    .img-list{display:flex;flex-direction:column;gap:6px;margin-bottom:6px;}
+    .img-row{display:flex;gap:6px;align-items:center;}
+    .img-row input{flex:1;}
+    .btn-rm-img{background:rgba(255,59,48,0.1);border:1px solid rgba(255,59,48,0.3);color:#ff3b30;width:30px;height:30px;border-radius:7px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .btn-add-img-row{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary);padding:8px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;cursor:pointer;}
+    .sz-row{display:flex;gap:6px;}
+    .sz-row input{flex:1;}
+    .btn-sz-add{background:var(--accent);color:#fff;border:none;padding:9px 13px;border-radius:var(--radius-sm);font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;}
+    .sz-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
+    .sz-tag{background:var(--surface2);border:1px solid var(--border);padding:4px 9px;border-radius:20px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;}
+    .sz-x{color:#ff3b30;cursor:pointer;font-size:12px;}
+    .amodal-actions{display:flex;gap:9px;margin-top:18px;}
+    .btn-asave{flex:1;background:var(--accent);color:#fff;border:none;padding:13px;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;}
+    .btn-acancel{flex:1;background:none;border:1px solid var(--border);color:var(--text-secondary);padding:13px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;}
+    .adel-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);display:none;align-items:center;justify-content:center;padding:24px;z-index:400;backdrop-filter:blur(8px);}
+    .adel-overlay.show{display:flex;}
+    .adel-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:26px;width:100%;max-width:300px;text-align:center;}
+    .adel-icon{font-size:32px;margin-bottom:9px;}
+    .adel-text{font-size:14px;font-weight:700;margin-bottom:3px;}
+    .adel-sub{font-size:12px;color:var(--text-secondary);margin-bottom:20px;}
+    .adel-btns{display:flex;gap:9px;}
+    .btn-adel-yes{flex:1;background:#ff3b30;color:#fff;border:none;padding:12px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;cursor:pointer;}
+    .btn-adel-no{flex:1;background:none;border:1px solid var(--border);color:var(--text-secondary);padding:12px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;}
+
+    /* TOAST */
+    .toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:rgba(255,59,48,0.95);color:#fff;padding:11px 22px;border-radius:28px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity 0.3s,transform 0.3s;z-index:500;text-align:center;width:88%;max-width:380px;}
+    .toast.success-toast{background:rgba(36,178,75,0.95);}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(8px);}
+
+    /* ENHANCEMENTS */
+    #fadeVeil{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:9000;transition:opacity .3s ease;}
+    #fadeVeil.on{opacity:1;pointer-events:all;transition-duration:.16s;}
+    .ord-filter{display:flex;gap:8px;padding:0 16px 10px;}
+    .ord-filter button{background:var(--surface2);border:1px solid var(--border);color:var(--text-secondary);border-radius:20px;padding:7px 14px;font:600 12px Inter,sans-serif;cursor:pointer;}
+    .ord-filter button.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+    .adm-box{margin:0 16px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;}
+    .adm-box h4{font-size:14px;font-weight:800;margin-bottom:10px;}
+    .adm-row{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--border);font-size:12px;}
+    .adm-row:first-of-type{border-top:none;}
+    .adm-chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 10px;font-size:12px;margin:0 6px 6px 0;}
+    .adm-chip b{cursor:pointer;color:var(--error);}
+    .adm-btn{background:var(--surface2);border:1px solid #333;color:#fff;border-radius:9px;padding:7px 11px;font:600 12px Inter,sans-serif;cursor:pointer;white-space:nowrap;}
+    .adm-btn.red{color:var(--error);} .adm-btn.green{color:var(--green);}
+    .adm-in{flex:1;min-width:0;background:var(--surface2);border:1px solid #333;color:#fff;border-radius:9px;padding:9px 11px;font:500 13px Inter,sans-serif;}
+    #banScreen{position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px;font-size:16px;font-weight:700;}
+  </style>
+</head>
+<body>
+
+  <div id="splashScreen">
+    <div class="splash-logo"><img src="logo.jpg" alt="Albert Shop"></div>
+    <div class="splash-name">Albert Shop</div>
+    <div class="splash-dots"><span></span><span></span><span></span></div>
+    <div class="splash-bar-track"><div class="splash-bar-fill"></div></div>
+    <div class="splash-label">Загрузка магазина...</div>
+  </div>
+
+  <!-- CATALOG -->
+  <div id="screenCatalog" class="screen active">
+    <!-- HERO BANNER -->
+    <div class="hero-banner">
+    <div class="shop-card">
+        <div class="shop-logo"><img src="data:image/jpeg;base64,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" alt=""></div>
+        <div class="shop-actions">
+          <button class="shop-act" onclick="navigateTo('screenFavourites')" aria-label="Избранное">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span class="fav-badge" id="favBadge" style="display:none;">0</span>
+          </button>
+          <button class="shop-act" onclick="navigateTo('screenCart')" aria-label="Корзина">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 7h12l1 13H5L6 7z"/><path d="M9 7V6a3 3 0 0 1 6 0v1"/></svg>
+          </button>
+          <button class="shop-act" onclick="navigateTo('screenProfile')" aria-label="Профиль">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="hero-banner-overlay"></div>
+      <div class="hero-content">
+        <div class="hero-name"><div class="l1"><span class="ch" style="animation-delay:0.00s,1.40s">A</span><span class="ch" style="animation-delay:0.09s,1.56s">L</span><span class="ch" style="animation-delay:0.18s,1.72s">B</span><span class="ch" style="animation-delay:0.27s,1.88s">E</span><span class="ch" style="animation-delay:0.36s,2.04s">R</span><span class="ch" style="animation-delay:0.45s,2.20s">T</span></div><div class="l2"><span class="ch" style="animation-delay:0.54s,2.36s">S</span><span class="ch" style="animation-delay:0.63s,2.52s">H</span><span class="ch" style="animation-delay:0.72s,2.68s">O</span><span class="ch" style="animation-delay:0.81s,2.84s">P</span></div></div>
+      </div>
+    </div>
+
+    <div class="shop-title-block">
+      <div class="shop-eyebrow">КАТАЛОГ ВЕЩЕЙ</div>
+      <div class="shop-name">Albert Shop</div>
+    </div>
+
+    <!-- MAIN MENU (pill buttons) -->
+    <div class="menu-pills">
+      <a class="menu-pill" href="https://t.me/AlbertShop1/3" onclick="openMenuLink(event,'https://t.me/AlbertShop1/3')">Перед покупкой</a>
+      <a class="menu-pill" href="https://t.me/albertshop1" onclick="openMenuLink(event,'https://t.me/albertshop1')">Канал</a>
+      <a class="menu-pill" href="https://t.me/AlbertshopReviews" onclick="openMenuLink(event,'https://t.me/AlbertshopReviews')">Отзывы</a>
+      <a class="menu-pill" href="https://t.me/+CV-ScIOB98o1YzE6" onclick="openMenuLink(event,'https://t.me/+CV-ScIOB98o1YzE6')">Под заказ</a>
+      <button class="menu-pill" onclick="openActiveOrders()">Заказы</button>
+      <a class="menu-pill" href="https://t.me/xqwex0" onclick="openMenuLink(event,'https://t.me/xqwex0')">Поддержка</a>
+    </div>
+
+    <div class="search-container">
+      <div class="search-bar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="searchInput" placeholder="Поиск товаров..." oninput="handleSearch()">
+      </div>
+      <button class="btn-filters" id="btnFilters" onclick="openFiltersModal()" aria-label="Фильтры">
+        <span class="filters-dot"></span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="section-head">Все товары</div>
+    <div class="grid-container" id="productsGrid"></div>
+
+    <div style="text-align:center;padding:28px 16px 16px;color:#333;font-size:11px;font-weight:600;letter-spacing:0.3px;">
+      Бот создан Rodion · <a href="https://t.me/rodi3825" target="_blank" style="color:#444;text-decoration:none;">@rodi3825</a>
+    </div>
+
+  </div>
+
+  <div class="bottom-tab-bar" id="bottomTabBar">
+    <button class="tab-item active" id="tabHome" onclick="navigateTo('screenCatalog')">
+      <div class="tab-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></div>
+      Главная
+    </button>
+    <button class="tab-item" id="tabFav" onclick="navigateTo('screenFavourites')">
+      <div class="tab-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+      Избранное
+      <span class="tab-badge" id="tabFavBadge">0</span>
+    </button>
+    <button class="tab-item" id="tabCart" onclick="navigateTo('screenCart')">
+      <div class="tab-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
+      Корзина
+      <span class="tab-badge" id="cartBadge">0</span>
+    </button>
+    <button class="tab-item" id="tabProfile" onclick="navigateTo('screenProfile')">
+      <div class="tab-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></div>
+      Профиль
+    </button>
+  </div>
+
+  <!-- FILTERS MODAL -->
+  <div class="fmodal-overlay" id="fModalOverlay">
+    <div class="fmodal">
+      <div class="fmodal-head">
+        <div class="fmodal-title">Фильтры</div>
+        <button class="btn-fmodal-close" onclick="closeFiltersModal()">✕</button>
+      </div>
+
+      <div class="fmodal-section-title">Сортировка</div>
+      <div class="fpill-row" id="fSortRow"></div>
+
+      <div class="fmodal-section-title">Наличие</div>
+      <div class="fpill-row" id="fAvailRow"></div>
+
+      <div class="fmodal-section-title">Бренд</div>
+      <div class="fpill-row" id="fBrandRow"></div>
+
+      <div class="fmodal-section-title">Категория</div>
+      <input type="text" class="fcat-search" id="fCatSearch" placeholder="Поиск категории..." oninput="renderFilterCatRow()">
+      <div class="fpill-row" id="fCatRow"></div>
+
+      <button class="btn-fmodal-apply" id="btnFmodalApply" onclick="applyFilters()">Показать все</button>
+      <button class="btn-fmodal-reset" onclick="resetFilters()">Сбросить фильтры</button>
+    </div>
+  </div>
+
+  <!-- DETAILS -->
+  <div id="screenDetails" class="screen">
+    <div class="back-nav" onclick="navigateTo('screenCatalog')">‹ Назад в каталог</div>
+    <div class="slider-viewport">
+      <div class="slider-track" id="detailsSliderTrack"></div>
+      <button class="slider-arrow prev" onclick="shiftSlide(-1)">‹</button>
+      <button class="slider-arrow next" onclick="shiftSlide(1)">›</button>
+      <div class="slider-dots-indicator" id="sliderDotsContainer"></div>
+    </div>
+    <div class="details-body">
+      <div>
+        <span class="details-badge" id="detailsBadge">NEW</span>
+        <span class="details-sold-badge" id="detailsSoldBadge" style="display:none;">Продано</span>
+      </div>
+      <div class="details-title" id="detailsTitle">—</div>
+      <div class="details-desc" id="detailsDesc">—</div>
+      <div class="details-characteristics">
+        <div class="char-row" id="rowCondition" style="display:none;"><span class="char-label">Состояние:</span><span class="char-val" id="detailsCondition">—</span></div>
+        <div class="char-row" id="rowBrand" style="display:none;"><span class="char-label">Бренд:</span><span class="char-val" id="detailsBrand">—</span></div>
+        <div class="char-row" id="rowComplect" style="display:none;"><span class="char-label">Комплект:</span><span class="char-val" id="detailsComplect">—</span></div>
+        <div class="char-row"><span class="char-label">Наличие:</span><span class="char-val" id="detailsStock">В наличии</span></div>
+        <div class="char-row"><span class="char-label">Артикул:</span><span class="char-val" id="detailsSku">—</span></div>
+      </div>
+      <div class="info-note">
+        <strong>Читать перед покупкой:</strong> Перед оплатой проверьте размер, состав и условия доставки. По вопросам, возврату, оплате и уточнениям пишите в Telegram:  или <a href="https://t.me/xqwex0" target="_blank">@xqwex0</a>.
+      </div>
+      <div class="size-section-title">Выберите размер:</div>
+      <div class="size-buttons-container" id="sizesContainer"></div>
+      <div class="contact-card">
+        <div class="contact-eyebrow"><span class="contact-eyebrow-dot"></span>Быстрая связь</div>
+        <div class="contact-heading">Есть вопросы по товару?</div>
+        <div class="contact-text">Напишите нам в удобный канал, и мы быстро подскажем по размеру, наличию, доставке и оплате.</div>
+        <a class="btn-seller-chat" href="https://t.me/xqwex0" target="_blank">Написать продавцу</a>
+      </div>
+    </div>
+   <div class="bottom-buy-panel">
+
+  <div class="panel-price-info">
+    <span style="font-size:10px;color:var(--text-secondary);">
+      Цена
+    </span>
+    <span class="panel-price-val" id="detailsPrice">0 ₽</span>
+  </div>
+
+  <div class="details-qty-stepper" id="detailsQtyStepper">
+    <button class="details-qty-btn" id="detailsQtyMinus" onclick="changeDetailsQty(-1)" aria-label="Уменьшить количество">−</button>
+    <span class="details-qty-num" id="detailsQtyNum">1</span>
+    <button class="details-qty-btn" id="detailsQtyPlus" onclick="changeDetailsQty(1)" aria-label="Увеличить количество">+</button>
+  </div>
+
+  <button
+    class="btn-add-to-cart"
+    id="detailsCartBtn"
+    onclick="addProductToCartFromDetails()">
+    В корзину
+  </button>
+
+  <!-- SHARE BUTTON -->
+  <div class="details-share-wrap">
+
+    <button
+      class="details-share-btn"
+      id="detailsShareBtn"
+      onclick="toggleDetailsShare(event)"
+      aria-label="Поделиться товаром">
+
+      <svg width="20" height="20"
+           viewBox="0 0 24 24"
+           fill="none"
+           stroke="currentColor"
+           stroke-width="1.8">
+        <circle cx="18" cy="5" r="3"></circle>
+        <circle cx="6" cy="12" r="3"></circle>
+        <circle cx="18" cy="19" r="3"></circle>
+        <path d="M8.7 10.7l6.6-4.4M8.7 13.3l6.6 4.4"></path>
+      </svg>
+
+    </button>
+
+    <!-- SHARE MENU -->
+    <div class="details-share-menu" id="detailsShareMenu">
+
+      <button
+        class="details-share-option"
+        onclick="shareDetailsTelegram(event)">
+
+        <svg width="17" height="17"
+             viewBox="0 0 24 24"
+             fill="none"
+             stroke="currentColor"
+             stroke-width="1.8">
+          <path d="M22 2L11 13"></path>
+          <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+        </svg>
+
+        В Telegram
+      </button>
+
+      <button
+        class="details-share-option"
+        onclick="copyDetailsProductLink(event)">
+
+        <svg width="17" height="17"
+             viewBox="0 0 24 24"
+             fill="none"
+             stroke="currentColor"
+             stroke-width="1.8">
+          <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+          <path d="M14 11a5 5 0 0 0-7.07 0l-3 3A5 5 0 0 0 11 21.07l1.71-1.71"></path>
+        </svg>
+
+        Скопировать
+      </button>
+
+    </div>
+  </div>
+
+</div>
+</div>
+
+  <!-- CART -->
+  <div id="screenCart" class="screen">
+    <div class="back-nav" onclick="navigateTo('screenCatalog')">‹ Назад</div>
+    <div class="section-head" id="cartTitle">Корзина (0)</div>
+    <div id="cartItemsList"></div>
+    <div class="checkout-form">
+      <div class="section-head" style="padding:0 0 14px;font-size:15px;">Оформление заказа</div>
+      <div class="form-group"><label class="form-label">ФИО <span>*</span></label><input type="text" id="formFio" class="form-input" placeholder="Введите полное имя"></div>
+      <div class="form-group"><label class="form-label">Телефон <span>*</span></label><input type="text" id="formPhone" class="form-input" value="+7"></div>
+      <div class="form-group"><label class="form-label">Ваш Telegram <span>*</span></label><input type="text" id="formTg" class="form-input" placeholder="@username"></div>
+      <div class="form-group"><label class="form-label">Доставка <span>*</span></label><select class="form-select" id="formDelivery"><option>Яндекс Доставка</option><option>СДЭК</option></select></div>
+      <div class="form-group"><label class="form-label">Адрес <span>*</span></label><input type="text" id="formAddress" class="form-input" placeholder="Введите адрес доставки"></div>
+    </div>
+    <div class="summary-bar"><span class="summary-label">Итого:</span><span class="summary-total" id="cartTotalSum">0 ₽</span></div>
+    <button class="btn-submit-order" onclick="processCheckoutOrder()">Оформить заказ</button>
+  </div>
+
+  <!-- PAYMENT -->
+  <div id="screenPayment" class="screen">
+    <div class="back-nav" onclick="navigateTo('screenCart')">‹ Назад</div>
+    <div class="section-head" style="padding-bottom:4px;">Оплата заказа</div>
+    <div class="payment-sub-title">Выберите способ оплаты</div>
+    <div class="pay-methods-list">
+      <div class="pay-card" onclick="triggerPaymentUnavailable('Карта или СБП')">
+        <div class="pay-icon-wrap"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="3" fill="#2f80ed" opacity="0.15"/><rect x="2" y="5" width="20" height="14" rx="3" stroke="#2f80ed" stroke-width="1.5"/><path d="M2 10H22" stroke="#2f80ed" stroke-width="1.5"/><rect x="5" y="14" width="4" height="2" rx="0.5" fill="#2f80ed"/></svg></div>
+        <div class="pay-card-title">Карта или СБП</div>
+      </div>
+      <div class="pay-card" onclick="triggerPaymentUnavailable('Криптовалюта')">
+        <div class="pay-icon-wrap"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="#24b24b" opacity="0.15"/><circle cx="12" cy="12" r="9" stroke="#24b24b" stroke-width="1.5"/><path d="M12 7V17M9 9.5H15M9 14.5H15" stroke="#24b24b" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+        <div class="pay-card-title">Криптовалюта</div>
+      </div>
+    </div>
+    <div class="payment-note">
+      <strong>Читать перед покупкой:</strong> После оформления заказа важно подтвердить наличие товара и способ доставки. Если есть вопросы по размеру, оплате, срокам или возврату — пишите в Telegram:  или <a href="https://t.me/xqwex0" target="_blank">@xqwex0</a>.
+    </div>
+    <div class="pay-details-box">
+      <div class="pay-details-head">Детали заказа</div>
+      <div id="paymentProductsList"></div>
+      <div class="pay-prod-row" style="margin-top:14px;font-weight:700;color:#fff;font-size:15px;"><span>Итого:</span><span id="paymentTotalSum">0 ₽</span></div>
+    </div>
+  </div>
+
+  <!-- FAVOURITES -->
+  <div id="screenFavourites" class="screen">
+    <div class="back-nav" onclick="navigateTo('screenCatalog')">‹ Назад</div>
+    <div class="section-head" style="padding-top:0;">❤️ Избранное</div>
+    <div class="fav-category-bar" id="favCategoryBar"></div>
+    <div class="grid-container" id="favouritesGrid"></div>
+  </div>
+
+  <!-- PROFILE -->
+  <div id="screenProfile" class="screen">
+    <div class="back-nav" onclick="navigateTo('screenCatalog')">‹ Назад</div>
+    <div class="section-head" style="padding-top:0;">Мой профиль</div>
+    <div class="profile-card">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;">
+        <div class="profile-avatar-big" id="profileAvatarBig">A</div>
+        <div id="profileUsernameBelow" style="font-size:10px;color:var(--text-secondary);font-weight:600;"></div>
+      </div>
+      <div>
+        <div class="profile-name" id="profileName">—</div>
+        <div class="profile-username" id="profileUsername"></div>
+        <div class="profile-since" id="profileSince"></div>
+      </div>
+    </div>
+    <div class="profile-phone-row">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 12 19.79 19.79 0 0 1 1.07 3.4 2 2 0 0 1 3 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21 16z"/></svg>
+      Номер не указан
+    </div>
+    <div class="profile-active-badge" id="profileActiveBadge" style="display:none;">⏳ Есть активные заказы</div>
+
+    <div class="profile-summary-box">
+      <div class="profile-summary-title">Аккаунт</div>
+      <div class="profile-summary-row"><span class="profile-summary-label">Telegram</span><span class="profile-summary-value" id="profileTelegramName">—</span></div>
+      <div class="profile-summary-row"><span class="profile-summary-label">Бот</span><span class="profile-summary-value" id="profileBotName">@xqwex0</span></div>
+      <div class="profile-summary-row"><span class="profile-summary-label">Заказов сделано</span><span class="profile-summary-value" id="profileOrdersCount">0</span></div>
+      <div class="profile-summary-row"><span class="profile-summary-label">Товаров куплено</span><span class="profile-summary-value" id="profileItemsBought">0</span></div>
+      <div class="profile-summary-row"><span class="profile-summary-label">Потрачено</span><span class="profile-summary-value" id="profilePurchaseSummary">0 ₽</span></div>
+      <div class="profile-summary-row"><span class="profile-summary-label">Статус</span><span class="profile-summary-value" id="profileStatus">Онлайн</span></div>
+    </div>
+
+    <a class="profile-contact-btn" href="https://t.me/xqwex0" target="_blank">Связаться с продавцом</a>
+
+    <div class="faq-box">
+      <div class="faq-title">FAQ</div>
+      <div class="faq-item">
+        <div class="faq-q">Как оформить заказ?</div>
+        <div class="faq-a">Выбирайте товар, добавляйте в корзину, укажите ФИО, телефон и адрес доставки, затем подтвердите заказ. После этого продавец свяжется с вами в Telegram.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Как быстро получить ответ?</div>
+        <div class="faq-a">Напишите продавцу в Telegram: @xqwex0. Обычно ответ приходит в течение нескольких минут, а иногда сразу после оформления заказа.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Как узнать размер?</div>
+        <div class="faq-a">В карточке товара есть размеры и описание. Если сомневаетесь, пишите продавцу: мы подскажем по размеру и состоянию вещи.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Есть ли возврат?</div>
+        <div class="faq-a">Возврат оговаривается отдельно и зависит от состояния товара и причины возврата. Для уточнения лучше обратиться к продавцу лично.</div>
+      </div>
+    </div>
+
+    <div class="orders-section-head"><span>Мои заказы</span><span class="orders-count-badge" id="ordersCountBadge">0 заказов</span></div>
+    <div id="profileOrdersList"></div>
+  </div>
+
+  <!-- PAYMENT ALERT -->
+  <div class="pay-alert-overlay" id="paymentAlertOverlay">
+    <div class="pay-alert-modal">
+      <div class="pay-alert-icon">✅</div>
+      <div class="pay-alert-text">Ваш заказ отправлен менеджеру. Ожидайте — он напишет вам в Telegram.</div>
+      <button class="btn-alert-close" onclick="closePaymentAlert();navigateTo('screenCatalog')">Готово</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toastNode"></div>
+
+  <script>
+    const webapp = window.Telegram?.WebApp;
+    if (webapp) {
+      webapp.ready(); webapp.expand();
+      // Use Telegram's native Back Button instead of an in-page one when
+      // running inside an actual Telegram Mini App.
+      if (webapp.BackButton) webapp.BackButton.onClick(() => navigateTo('screenCatalog'));
+    }
+
+    // ── SAFE LOCALSTORAGE WRAPPER ──
+    // On some platforms (opening the file directly via file://, certain
+    // in-app/embedded browsers) localStorage throws a SecurityError
+    // ("opaque origin"). Without this guard that error would stop the
+    // whole script from running and the page would stay blank/black.
+    let storageAvailable = true;
+    function safeGet(key, fallback) {
+      try { const v = localStorage.getItem(key); return v === null ? fallback : v; }
+      catch (e) { storageAvailable = false; return fallback; }
+    }
+    function safeSet(key, value) {
+      try { localStorage.setItem(key, value); }
+      catch (e) { storageAvailable = false; }
+    }
+    function safeParseJSON(raw, fallback) {
+      if (raw === null || raw === undefined) return fallback;
+      try {
+        const parsed = JSON.parse(raw);
+        return parsed === null || parsed === undefined ? fallback : parsed;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    // Fallback bot username for Telegram share links and profile info.
+    const BOT_USERNAME = 'xqwex0';
+
+    // ── SHARED DATABASE (Supabase) ──
+    const SB_URL = 'https://zbtjttnbvmjgkrxpkmnh.supabase.co';
+    const SB_KEY = 'sb_publishable_cEEDSjuguL4wwAyNAhfXwQ_C40q5_fx';
+    const INIT_T0 = Date.now();
+    function sbFetch(path, opts = {}, timeoutMs = 8000) {
+      const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+      const o = Object.assign({}, opts);
+      o.headers = Object.assign({ apikey: SB_KEY }, opts.headers || {});
+      if (ctrl) o.signal = ctrl.signal;
+      return fetch(SB_URL + path, o).finally(() => { if (timer) clearTimeout(timer); });
+    }
+
+    // Products: shown instantly from the local cache, then refreshed from the shared database.
+    let PRODUCTS = safeParseJSON(safeGet('shopProducts', 'null'), []);
+    if (!Array.isArray(PRODUCTS)) PRODUCTS = [];
+
+    async function loadRemoteData() {
+      try {
+        const [pr, br] = await Promise.all([
+          sbFetch('/rest/v1/products?select=id,data&order=id.desc').then(r => r.ok ? r.json() : Promise.reject(new Error('products ' + r.status))),
+          sbFetch('/rest/v1/settings?key=eq.brands&select=value').then(r => r.ok ? r.json() : [])
+        ]);
+        PRODUCTS = pr
+          .map(r => Object.assign({}, r.data, { id: Number(r.id) }))
+          .filter(p => Array.isArray(p.images) && p.images.length && Array.isArray(p.sizes));
+        window.__remoteLoaded = true;
+        safeSet('shopProducts', JSON.stringify(PRODUCTS));
+        if (br[0] && Array.isArray(br[0].value)) {
+          BRANDS_LIST.length = 0; BRANDS_LIST.push(...br[0].value);
+          safeSet('shopBrands', JSON.stringify(BRANDS_LIST));
+        }
+        renderItemsGrid(); syncFavBadge();
+        const fav = document.getElementById('screenFavourites');
+        if (fav && fav.classList.contains('active')) renderFavouritesPage();
+      } catch (e) {
+        console.warn('Не удалось загрузить данные, показан кэш:', e);
+      }
+    }
+
+    const CATEGORIES_LIST = [
+      { name:"Все", image:"5332318687194716427.jpg", style:"object-fit:cover;height:100%;" },
+      { name:"Футболки", image:"futbolki.jpg", style:"object-fit:cover;height:100%;" },
+      { name:"Худи/Зипки", image:"kofti.jpg", style:"object-fit:cover;height:120%;" },
+      { name:"Куртки/Ветровки", image:"curtki.jpg", style:"object-fit:cover;height:100%;" },
+      { name:"Штаны/Джинсы", image:"stan.jpg", style:"object-fit:cover;height:100%;" },
+      { name:"Шорты", image:"", style:"" },
+      { name:"Обувь", image:"obuv.jpg", style:"object-fit:cover;height:100%;" },
+      { name:"Головные уборы", image:"", style:"" },
+      { name:"Аксессуары", image:"9b04804e-0864-4ca4-aa19-6e171a661bac.png", style:"object-fit:cover;height:120%;" },
+      { name:"Другое", image:"", style:"" },
+    ];
+    const BRANDS_LIST = ["Palm Angels", "Stone Island", "C.P Company", "Gucci", "Balenciaga", "Amiri", "Maison Margiela", "Dolce Gabbana", "Bape"];
+
+    let activeCategory = "Все", searchString = "";
+    let currentFavCategory = "Все";
+    // ── FILTERS (sort / availability / brand / category) ──
+    let filterSort = "newest";          // newest | cheap | expensive | condition
+    let filterAvailability = "all";     // all | inStock
+    let filterBrands = new Set();       // empty = all brands
+    let filterCategories = new Set();   // empty = no override (tab bar controls category)
+    // draft copies edited while the modal is open, committed on "Показать"
+    let draftSort = filterSort, draftAvailability = filterAvailability;
+    let draftBrands = new Set(), draftCategories = new Set();
+    // ── CART — persisted in localStorage ──
+    let shoppingCart = safeParseJSON(safeGet('shopCart', '{}'), {});
+    function saveCart() { safeSet('shopCart', JSON.stringify(shoppingCart)); }
+
+    let currentViewingProduct = null, selectedSize = "", activeSlidePos = 0, detailsQty = 1;
+    let savedOrders = safeParseJSON(safeGet('shopOrders', '[]'), []);
+    function saveOrders() { safeSet('shopOrders', JSON.stringify(savedOrders)); }
+
+    let favourites = new Set(Array.isArray(safeParseJSON(safeGet('shopFavs', '[]'), [])) ? safeParseJSON(safeGet('shopFavs', '[]'), []) : []);
+    function saveFavs() { safeSet('shopFavs', JSON.stringify([...favourites])); }
+
+    function isSoldOut(p) { return p.stock !== undefined && p.stock <= 0; }
+
+    function toggleFav(id, e, shouldOpenPage = true) {
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+      const safeId = Number(id);
+      if (!Number.isFinite(safeId)) return;
+      const wasFav = favourites.has(safeId);
+      if (wasFav) favourites.delete(safeId); else favourites.add(safeId);
+      saveFavs(); syncFavBadge(); renderItemsGrid();
+      showToast(wasFav ? 'Удалено из избранного' : 'Добавлено в избранное', !wasFav);
+      if (document.getElementById('screenFavourites') && document.getElementById('screenFavourites').classList.contains('active')) {
+        renderFavouritesPage();
+      }
+    }
+    function pruneFavs() {
+      if (!PRODUCTS.length && !window.__remoteLoaded) return;
+      const ids = new Set(PRODUCTS.map(p => Number(p.id)));
+      const clean = [...favourites].map(Number).filter(i => ids.has(i));
+      if (clean.length !== favourites.size || [...favourites].some(i => typeof i !== 'number')) { favourites = new Set(clean); saveFavs(); }
+    }
+    function syncFavBadge() {
+      pruneFavs();
+      const b = document.getElementById('favBadge');
+      if (b) {
+        b.innerText = favourites.size; b.style.display = favourites.size > 0 ? 'flex' : 'none';
+      }
+      const tb = document.getElementById('tabFavBadge');
+      if (tb) {
+        tb.innerText = favourites.size;
+        const tab = document.getElementById('tabFav');
+        if (tab) tab.classList.toggle('has-badge', favourites.size > 0);
+        tb.style.display = favourites.size > 0 ? 'flex' : 'none';
+      }
+    }
+    function quickAddToCart(id, e) {
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+      const safeId = Number(id);
+      const p = PRODUCTS.find(x => x.id === safeId);
+      if (!p || isSoldOut(p)) return;
+      const key = `${p.id}_${p.sizes[0]||'one'}`;
+      const currentQty = shoppingCart[key] ? shoppingCart[key].qty : 0;
+      if (currentQty >= p.stock) { showToast(`В наличии только ${p.stock} шт. — больше добавить нельзя`); return; }
+      if (shoppingCart[key]) shoppingCart[key].qty++; else shoppingCart[key] = { product:p, size:p.sizes[0]||'', qty:1 };
+      saveCart(); showToast('Добавлено в корзину!', true); syncCartIndicators();
+    }
+
+    // ── SHARE / COPY LINK MENU ──
+    // Ссылка на товар открывает сайт магазина сразу на этом товаре (#p<id> обрабатывает handleDeepLink)
+    const SHOP_PUBLIC_URL = 'https://r99373215-design.github.io/alibert1/';
+    function getProductLink(id) {
+      return `${SHOP_PUBLIC_URL}#p${id}`;
+    }
+    function closeAllProdMenus() {
+      document.querySelectorAll('.prod-menu-dropdown.show').forEach(m => m.classList.remove('show'));
+    }
+    function toggleProdMenu(id, e) {
+      e.stopPropagation();
+      const menu = document.getElementById(`pmenu-${id}`);
+      if (!menu) return;
+      const wasOpen = menu.classList.contains('show');
+      closeAllProdMenus();
+      if (!wasOpen) menu.classList.add('show');
+    }
+    function shareProductTelegram(id, e) {
+      e.stopPropagation();
+      closeAllProdMenus();
+      const p = PRODUCTS.find(x => x.id === id);
+      if (!p) return;
+      const link = getProductLink(id);
+      const text = `${p.name} — ${p.price.toLocaleString()} ₽`;
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+      if (webapp && webapp.openTelegramLink) webapp.openTelegramLink(shareUrl);
+      else window.open(shareUrl, '_blank');
+    }
+    function copyProductLink(id, e) {
+      e.stopPropagation();
+      closeAllProdMenus();
+      const link = getProductLink(id);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(() => showToast('Ссылка скопирована!', true)).catch(() => fallbackCopyLink(link));
+      } else {
+        fallbackCopyLink(link);
+      }
+    }
+    function fallbackCopyLink(link) {
+      const ta = document.createElement('textarea');
+      ta.value = link; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); showToast('Ссылка скопирована!', true); }
+      catch (err) { showToast('Не удалось скопировать ссылку'); }
+      document.body.removeChild(ta);
+    }
+    function prodMenuHtml(id) {
+      return `
+        <button class="prod-menu-btn" onclick="toggleProdMenu(${id},event)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+        </button>
+        <div class="prod-menu-dropdown" id="pmenu-${id}">
+          <div class="prod-menu-item" onclick="shareProductTelegram(${id},event)">📤 Отправить в Telegram</div>
+          <div class="prod-menu-item" onclick="copyProductLink(${id},event)">🔗 Скопировать ссылку</div>
+        </div>`;
+    }
+    document.addEventListener('click', closeAllProdMenus);
+
+    // ── INIT ──
+    function init() {
+      const tg = window.Telegram?.WebApp?.initDataUnsafe?.user;
+      const firstName = tg?.first_name || 'A';
+      const headerAvatar = document.getElementById('headerAvatar');
+      if (headerAvatar) {
+        if (tg?.photo_url) headerAvatar.innerHTML = `<img src="${tg.photo_url}" alt="">`;
+        else headerAvatar.innerText = firstName[0].toUpperCase();
+      }
+
+      renderItemsGrid();
+      syncCartIndicators();
+      syncFavBadge();
+      setActiveTab('tabHome');
+
+      loadRemoteData().finally(() => {
+        handleDeepLink();
+        setTimeout(hideSplash, Math.max(0, 700 - (Date.now() - INIT_T0)));
+      });
+      setTimeout(hideSplash, 9500);
+    }
+    function hideSplash() {
+      const splash = document.getElementById('splashScreen');
+      if (splash) { splash.classList.add('hide'); setTimeout(() => splash.remove(), 400); }
+    }
+    // Deep links: Telegram startapp=p<id> or web #p<id>
+    function handleDeepLink() {
+      let pid = NaN;
+      const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param || '';
+      if (startParam.startsWith('p')) pid = parseInt(startParam.slice(1));
+      else { const m = location.hash.match(/^#p(\d+)$/); if (m) pid = +m[1]; }
+      if (!isNaN(pid) && PRODUCTS.some(p => p.id === pid)) viewProductDetails(pid);
+    }
+    // ── PRODUCT DETAILS SHARE MENU ──
+
+function toggleDetailsShare(event) {
+  event.stopPropagation();
+
+  const menu = document.getElementById("detailsShareMenu");
+  menu.classList.toggle("show");
+}
+
+function closeDetailsShare() {
+  document.getElementById("detailsShareMenu")
+    .classList.remove("show");
+}
+
+// Share product to Telegram
+function shareDetailsTelegram(event) {
+  event.stopPropagation();
+
+  if (!currentViewingProduct) return;
+
+  const p = currentViewingProduct;
+  const link = getProductLink(p.id);
+
+  const text = `${p.name} — ${p.price.toLocaleString()} ₽`;
+
+  const shareUrl =
+    `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+
+  closeDetailsShare();
+
+  if (webapp && webapp.openTelegramLink) {
+    webapp.openTelegramLink(shareUrl);
+  } else {
+    window.open(shareUrl, "_blank");
+  }
+}
+
+// Copy product link
+function copyDetailsProductLink(event) {
+  event.stopPropagation();
+
+  if (!currentViewingProduct) return;
+
+  const link = getProductLink(currentViewingProduct.id);
+
+  closeDetailsShare();
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link)
+      .then(() => showToast("Ссылка скопирована!", true))
+      .catch(() => fallbackCopyLink(link));
+  } else {
+    fallbackCopyLink(link);
+  }
+}
+
+// Close menu when clicking outside
+document.addEventListener("click", function(event) {
+  const wrap = document.querySelector(".details-share-wrap");
+
+  if (wrap && !wrap.contains(event.target)) {
+    closeDetailsShare();
+  }
+});
+
+    function setActiveTab(tabId) {
+      document.querySelectorAll('.tab-item').forEach(t => t.classList.toggle('active', t.id === tabId));
+    }
+
+    function navigateTo(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const target = document.getElementById(id);
+      if (!target) { console.error('navigateTo: no screen with id', id); return; }
+      target.classList.add('active'); window.scrollTo(0,0);
+      // Native Telegram Back Button on every screen except the catalog root;
+      // our own in-page "‹ Назад" pill stays as a fallback outside Telegram.
+      if (webapp && webapp.BackButton) {
+        if (id === 'screenCatalog') webapp.BackButton.hide(); else webapp.BackButton.show();
+      }
+      try {
+        if (id==='screenCart') renderCartPage();
+        if (id==='screenPayment') renderPaymentPage();
+        if (id==='screenProfile') renderProfilePage();
+        if (id==='screenFavourites') renderFavouritesPage();
+      } catch (err) {
+        console.error('navigateTo render error for', id, err);
+      }
+      const tabMap = { screenCatalog:'tabHome', screenFavourites:'tabFav', screenCart:'tabCart', screenProfile:'tabProfile' };
+      if (tabMap[id]) setActiveTab(tabMap[id]);
+    }
+
+    // ── CATEGORIES ──
+    function renderCategoryList() {
+      const c = document.getElementById("categoriesRow");
+      if (!c) return;
+      c.innerHTML = "";
+      CATEGORIES_LIST.forEach(cat => {
+        const b = document.createElement("div");
+        b.className = `cat-item ${cat.name===activeCategory?'active':''}`;
+        b.onclick = () => setCategory(cat.name);
+        b.innerHTML = `<div class="cat-item-title">${cat.name}</div>`;
+        c.appendChild(b);
+      });
+    }
+    let catScrollLocked = false;
+    function slideCats(d) {
+      const row = document.getElementById("categoriesRow");
+      if (!row || catScrollLocked) return;
+      const maxLeft = row.scrollWidth - row.clientWidth;
+      const curLeft = row.scrollLeft;
+      const nextLeft = Math.max(0, Math.min(maxLeft, curLeft + d * 200));
+      if (nextLeft === curLeft) return;
+      catScrollLocked = true;
+      row.scrollTo({ left: nextLeft, behavior: 'smooth' });
+      setTimeout(() => { catScrollLocked = false; }, 320);
+    }
+    function setCategory(n) { activeCategory=n; filterCategories=new Set(); renderCategoryList(); renderItemsGrid(); setTimeout(()=>document.getElementById("productsGrid").scrollIntoView({behavior:'smooth',block:'start'}),50); }
+    function scrollToCatalog() { document.getElementById("productsGrid").scrollIntoView({behavior:'smooth',block:'start'}); }
+    function handleSearch() { searchString=document.getElementById("searchInput").value.trim().toLowerCase(); renderItemsGrid(); }
+
+    // ── PRODUCTS GRID (with sort / availability / brand / category filters) ──
+    function conditionScore(cond) {
+      if (!cond) return -1;
+      const m = String(cond).match(/(\d+(\.\d+)?)/);
+      return m ? parseFloat(m[1]) : -1;
+    }
+    function productMatchesFilters(p, sort, avail, brands, cats) {
+      const catOk = cats.size > 0 ? cats.has(p.category) : (activeCategory === "Все" || p.category === activeCategory);
+      const availOk = avail === "inStock" ? !isSoldOut(p) : true;
+      const brandOk = brands.size > 0 ? brands.has(p.brand) : true;
+      const searchOk = p.name.toLowerCase().includes(searchString);
+      return catOk && availOk && brandOk && searchOk;
+    }
+    function sortProducts(list, sort) {
+      const arr = [...list];
+      if (sort === "cheap") arr.sort((a,b)=>a.price-b.price);
+      else if (sort === "expensive") arr.sort((a,b)=>b.price-a.price);
+      else if (sort === "condition") arr.sort((a,b)=>conditionScore(b.condition)-conditionScore(a.condition));
+      else arr.sort((a,b)=>b.id-a.id); // newest first
+      return arr;
+    }
+    function getFilteredProducts(useDraft) {
+      const sort = useDraft ? draftSort : filterSort;
+      const avail = useDraft ? draftAvailability : filterAvailability;
+      const brands = useDraft ? draftBrands : filterBrands;
+      const cats = useDraft ? draftCategories : filterCategories;
+      return sortProducts(PRODUCTS.filter(p=>productMatchesFilters(p, sort, avail, brands, cats)), sort);
+    }
+    function renderItemsGrid() {
+      const grid = document.getElementById("productsGrid");
+      if (!grid) return;
+      const filterButton = document.getElementById("btnFilters");
+      grid.innerHTML = "";
+      const list = getFilteredProducts(false);
+      if (filterButton) {
+        filterButton.classList.toggle("has-active",
+          filterAvailability !== "all" || filterBrands.size > 0 || filterCategories.size > 0 || filterSort !== "newest");
+      }
+      if (list.length === 0) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-secondary);">Ничего не найдено</div>'; return; }
+      list.forEach(p => {
+          const isFav = favourites.has(p.id);
+          const sold = isSoldOut(p);
+          const metaParts = [];
+          if (p.sizes && p.sizes.length) metaParts.push(p.sizes.join('/'));
+          if (p.condition) metaParts.push(p.condition);
+          if (p.category === "Обувь" && p.complect) metaParts.push(`Комплект: ${p.complect}`);
+          const card = document.createElement("div");
+          card.className = "prod-card";
+          card.innerHTML = `
+            <div class="prod-img-box">
+              <img src="${p.images[0]}" alt="${p.name}" onclick="viewProductDetails(${p.id})">
+              ${sold ? `<div class="prod-sold-overlay"><span class="prod-sold-label">Продано</span></div>` : ''}
+              ${prodMenuHtml(p.id)}
+              <button class="prod-heart-btn ${isFav?'active':''}" onclick="toggleFav(${p.id},event)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="${isFav?'#ff3b30':'none'}" stroke="${isFav?'#ff3b30':'#fff'}" stroke-width="2.2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+            <div class="prod-details">
+              <div class="prod-title" onclick="viewProductDetails(${p.id})">${p.name}</div>
+              ${metaParts.length ? `<div class="prod-meta-line">${metaParts.join(' · ')}</div>` : ''}
+              <div class="prod-price">${p.price.toLocaleString()} ₽</div>
+              <div class="prod-card-actions">
+                <button class="btn-card-cart" onclick="quickAddToCart(${p.id},event)" ${sold?'disabled':''}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                </button>
+                <button class="btn-card-fav ${isFav?'active':''}" onclick="toggleFav(${p.id},event)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="${isFav?'#ff3b30':'none'}" stroke="${isFav?'#ff3b30':'currentColor'}" stroke-width="2.2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                </button>
+              </div>
+            </div>`;
+          grid.appendChild(card);
+        });
+    }
+
+    // ── HEADER "..." MENU ──
+    function toggleHeaderMenu(e) {
+      e.stopPropagation();
+      document.getElementById('headerMenuDropdown').classList.toggle('show');
+    }
+    function closeHeaderMenu() { document.getElementById('headerMenuDropdown').classList.remove('show'); }
+    document.addEventListener('click', (e) => {
+      const wrap = document.querySelector('.header-menu-wrap');
+      if (wrap && !wrap.contains(e.target)) closeHeaderMenu();
+    });
+
+    // ── MAIN MENU LINKS ──
+    function openMenuLink(e, url) {
+      if (e) e.preventDefault();
+      try {
+        if (webapp && webapp.openTelegramLink && /^https:\/\/t\.me\//.test(url)) { webapp.openTelegramLink(url); return; }
+      } catch (err) {}
+      window.open(url, '_blank');
+    }
+
+    // ── FILTERS MODAL ──
+    const SORT_OPTIONS = [
+      { id:"newest", label:"Сначала новые" },
+      { id:"cheap", label:"Сначала дешевле" },
+      { id:"expensive", label:"Сначала дороже" },
+      { id:"condition", label:"По состоянию" },
+    ];
+    const AVAIL_OPTIONS = [
+      { id:"inStock", label:"Только в наличии" },
+      { id:"all", label:"Все вещи" },
+    ];
+    function openFiltersModal() {
+      draftSort = filterSort; draftAvailability = filterAvailability;
+      draftBrands = new Set(filterBrands); draftCategories = new Set(filterCategories);
+      document.getElementById('fCatSearch').value = '';
+      renderFilterSortRow(); renderFilterAvailRow(); renderFilterBrandRow(); renderFilterCatRow();
+      updateApplyButtonCount();
+      document.getElementById('fModalOverlay').classList.add('show');
+    }
+    function closeFiltersModal() { document.getElementById('fModalOverlay').classList.remove('show'); }
+    function renderFilterSortRow() {
+      const row = document.getElementById('fSortRow'); row.innerHTML = '';
+      SORT_OPTIONS.forEach(opt => {
+        const b = document.createElement('button');
+        b.className = `fpill ${draftSort===opt.id?'active':''}`; b.innerText = opt.label;
+        b.onclick = () => { draftSort = opt.id; renderFilterSortRow(); updateApplyButtonCount(); };
+        row.appendChild(b);
+      });
+    }
+    function renderFilterAvailRow() {
+      const row = document.getElementById('fAvailRow'); row.innerHTML = '';
+      AVAIL_OPTIONS.forEach(opt => {
+        const b = document.createElement('button');
+        b.className = `fpill ${draftAvailability===opt.id?'active':''}`; b.innerText = opt.label;
+        b.onclick = () => { draftAvailability = opt.id; renderFilterAvailRow(); updateApplyButtonCount(); };
+        row.appendChild(b);
+      });
+    }
+    function renderFilterBrandRow() {
+      const row = document.getElementById('fBrandRow'); row.innerHTML = '';
+      const brandsInUse = [...new Set(PRODUCTS.map(p=>p.brand).filter(Boolean))];
+      const brands = [...new Set([...BRANDS_LIST, ...brandsInUse])];
+      const allBtn = document.createElement('button');
+      allBtn.className = `fpill brand-active ${draftBrands.size===0?'active':''}`; allBtn.innerText = 'Все бренды';
+      allBtn.onclick = () => { draftBrands.clear(); renderFilterBrandRow(); updateApplyButtonCount(); };
+      row.appendChild(allBtn);
+      brands.forEach(brand => {
+        const b = document.createElement('button');
+        b.className = `fpill brand-active ${draftBrands.has(brand)?'active':''}`; b.innerText = brand;
+        b.onclick = () => { draftBrands.has(brand) ? draftBrands.delete(brand) : draftBrands.add(brand); renderFilterBrandRow(); updateApplyButtonCount(); };
+        row.appendChild(b);
+      });
+    }
+    function renderFilterCatRow() {
+      const row = document.getElementById('fCatRow'); row.innerHTML = '';
+      const q = document.getElementById('fCatSearch').value.trim().toLowerCase();
+      const cats = CATEGORIES_LIST.filter(c=>c.name!=="Все" && c.name.toLowerCase().includes(q));
+      const allBtn = document.createElement('button');
+      allBtn.className = `fpill ${draftCategories.size===0?'active':''}`; allBtn.innerText = 'Все категории';
+      allBtn.onclick = () => { draftCategories.clear(); renderFilterCatRow(); updateApplyButtonCount(); };
+      row.appendChild(allBtn);
+      cats.forEach(cat => {
+        const b = document.createElement('button');
+        b.className = `fpill ${draftCategories.has(cat.name)?'active':''}`; b.innerText = cat.name;
+        b.onclick = () => { draftCategories.has(cat.name) ? draftCategories.delete(cat.name) : draftCategories.add(cat.name); renderFilterCatRow(); updateApplyButtonCount(); };
+        row.appendChild(b);
+      });
+    }
+    function updateApplyButtonCount() {
+      const n = getFilteredProducts(true).length;
+      document.getElementById('btnFmodalApply').innerText = n>0 ? `Показать ${n}` : 'Ничего не найдено';
+    }
+    function applyFilters() {
+      filterSort = draftSort; filterAvailability = draftAvailability;
+      filterBrands = new Set(draftBrands); filterCategories = new Set(draftCategories);
+      if (filterCategories.size > 0) { activeCategory = "Все"; renderCategoryList(); }
+      renderItemsGrid(); closeFiltersModal();
+    }
+    function resetFilters() {
+      filterSort = "newest"; filterAvailability = "all";
+      filterBrands = new Set(); filterCategories = new Set();
+      renderItemsGrid(); closeFiltersModal();
+    }
+    document.getElementById('fModalOverlay').addEventListener('click', e => { if (e.target===e.currentTarget) closeFiltersModal(); });
+
+    // ── PRODUCT DETAILS ──
+    function toggleCharRow(rowId, valId, value) {
+      const row = document.getElementById(rowId), val = document.getElementById(valId);
+      if (value) { row.style.display = "flex"; val.innerText = value; }
+      else { row.style.display = "none"; }
+    }
+    function viewProductDetails(id) {
+      const p = PRODUCTS.find(x=>x.id===id); if(!p) return;
+      currentViewingProduct=p; selectedSize=p.sizes[0]||""; activeSlidePos=0; detailsQty=1;
+      updateDetailsQtyUI();
+      const sold = isSoldOut(p);
+      document.getElementById("detailsTitle").innerText=p.name;
+      document.getElementById("detailsDesc").innerText=p.desc;
+      document.getElementById("detailsSku").innerText=p.sku;
+      document.getElementById("detailsPrice").innerText=`${p.price.toLocaleString()} ₽`;
+      document.getElementById("detailsSoldBadge").style.display=sold?'inline-block':'none';
+      toggleCharRow("rowCondition","detailsCondition",p.condition);
+      toggleCharRow("rowBrand","detailsBrand",p.brand);
+      toggleCharRow("rowComplect","detailsComplect",p.complect);
+      const stockEl=document.getElementById("detailsStock");
+      if(sold){stockEl.innerText="Продано";stockEl.className="char-val red";}
+      else if(p.stock <= 3){stockEl.innerText=`Осталось ${p.stock} шт.`;stockEl.className="char-val red";}
+      else{stockEl.innerText=`В наличии (${p.stock} шт.)`;stockEl.className="char-val green";}
+      const cartBtn=document.getElementById("detailsCartBtn");
+      cartBtn.disabled=sold; cartBtn.innerText=sold?"Продано":"В корзину";
+      const track=document.getElementById("detailsSliderTrack"); track.innerHTML="";
+      p.images.forEach(img=>{const s=document.createElement("div");s.className="slider-img-slide";s.innerHTML=`<img src="${img}" alt="">`;track.appendChild(s);});
+      setupSliderDots(p.images.length); refreshSliderPosition();
+      const sizesBox=document.getElementById("sizesContainer"); sizesBox.innerHTML="";
+      p.sizes.forEach(sz=>{
+        const btn=document.createElement("button");
+        btn.className=`size-btn ${sz===selectedSize?'selected':''}`;
+        btn.innerText=sz; btn.disabled=sold;
+        btn.onclick=()=>{selectedSize=sz;document.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');};
+        sizesBox.appendChild(btn);
+      });
+      navigateTo("screenDetails");
+    }
+    function setupSliderDots(count){const c=document.getElementById("sliderDotsContainer");c.innerHTML="";if(count<=1)return;for(let i=0;i<count;i++){const d=document.createElement("div");d.className=`slider-dot-node ${i===0?'active':''}`;c.appendChild(d);}}
+    function shiftSlide(dir){if(!currentViewingProduct)return;activeSlidePos=(activeSlidePos+dir+currentViewingProduct.images.length)%currentViewingProduct.images.length;refreshSliderPosition();}
+    function refreshSliderPosition(){document.getElementById("detailsSliderTrack").style.transform=`translateX(-${activeSlidePos*100}%)`;document.querySelectorAll(".slider-dot-node").forEach((d,i)=>d.classList.toggle("active",i===activeSlidePos));}
+
+    // ── CART ──
+    function updateDetailsQtyUI(){
+      const numEl=document.getElementById("detailsQtyNum");
+      if(!numEl)return;
+      numEl.innerText=detailsQty;
+      const minusBtn=document.getElementById("detailsQtyMinus");
+      const plusBtn=document.getElementById("detailsQtyPlus");
+      const stock=currentViewingProduct?currentViewingProduct.stock:99;
+      const sold=currentViewingProduct?isSoldOut(currentViewingProduct):false;
+      if(minusBtn)minusBtn.disabled=sold||detailsQty<=1;
+      if(plusBtn)plusBtn.disabled=sold||detailsQty>=stock;
+    }
+    function changeDetailsQty(delta){
+      if(!currentViewingProduct)return;
+      const stock=currentViewingProduct.stock;
+      let next=detailsQty+delta;
+      if(next<1)next=1;
+      if(next>stock)next=stock;
+      detailsQty=next;
+      updateDetailsQtyUI();
+    }
+    function addProductToCartFromDetails(){
+      if(!currentViewingProduct||isSoldOut(currentViewingProduct))return;
+      const key=`${currentViewingProduct.id}_${selectedSize}`;
+      const currentQty = shoppingCart[key] ? shoppingCart[key].qty : 0;
+      if (currentQty >= currentViewingProduct.stock) {
+        showToast(`В наличии только ${currentViewingProduct.stock} шт. — больше добавить нельзя`);
+        return;
+      }
+      const addQty = Math.min(detailsQty, currentViewingProduct.stock - currentQty);
+      if(shoppingCart[key])shoppingCart[key].qty+=addQty;else shoppingCart[key]={product:currentViewingProduct,size:selectedSize,qty:addQty};
+      saveCart();showToast("Добавлено в корзину!",true);syncCartIndicators();
+      detailsQty=1;updateDetailsQtyUI();
+    }
+    function syncCartIndicators(){
+      const total=Object.values(shoppingCart).reduce((a,i)=>a+i.qty,0);
+      const b=document.getElementById("cartBadge");
+      if (b) {
+        b.innerText=total;
+        const tab = document.getElementById('tabCart');
+        if (tab) tab.classList.toggle('has-badge', total > 0);
+        b.style.display=total>0?"flex":"none";
+      }
+    }
+    let cartSelected = new Set();
+    let cartKnownKeys = new Set();
+    function renderCartPage(){
+      const c=document.getElementById("cartItemsList");c.innerHTML="";
+      let total=0;const entries=Object.entries(shoppingCart);
+      // Only brand-new items default to selected; an item the user already
+      // unticked must stay unticked across re-renders.
+      const keys=new Set(entries.map(([k])=>k));
+      [...cartKnownKeys].forEach(k=>{if(!keys.has(k)){cartKnownKeys.delete(k);cartSelected.delete(k);}});
+      entries.forEach(([k])=>{if(!cartKnownKeys.has(k)){cartKnownKeys.add(k);cartSelected.add(k);}});
+      document.getElementById("cartTitle").innerText=`Корзина (${entries.reduce((a,c)=>a+c[1].qty,0)})`;
+      if(entries.length===0){c.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text-secondary);">Корзина пуста</div>`;document.getElementById("cartTotalSum").innerText="0 ₽";return;}
+      entries.forEach(([key,item])=>{
+        const checked=cartSelected.has(key);
+        if(checked)total+=item.product.price*item.qty;
+        const card=document.createElement("div");card.className=`cart-item-card${checked?' selected':''}`;
+        card.innerHTML=`<button class="cart-select-btn${checked?' checked':''}" onclick="toggleCartSelect('${key}')">${checked?'✓':''}</button><img src="${item.product.images[0]}" class="cart-item-img" alt=""><div class="cart-item-info"><div class="cart-item-title">${item.product.name}</div><div class="cart-item-meta">Размер: ${item.size}</div><div class="cart-item-price">${item.product.price.toLocaleString()} ₽</div><div class="cart-controls"><button class="cart-qty-btn" onclick="adjustQty('${key}',-1)">-</button><span class="cart-qty-num">${item.qty}</span><button class="cart-qty-btn" onclick="adjustQty('${key}',1)">+</button><span class="cart-delete-text" onclick="deleteCartItem('${key}')">Удалить</span></div></div>`;
+        c.appendChild(card);
+      });
+      document.getElementById("cartTotalSum").innerText=`${total.toLocaleString()} ₽`;
+    }
+    function toggleCartSelect(key){
+      if(cartSelected.has(key))cartSelected.delete(key);else cartSelected.add(key);
+      renderCartPage();
+    }
+    function adjustQty(key,change){
+      if(!shoppingCart[key])return;
+      if(change > 0){
+        const p = shoppingCart[key].product;
+        const freshP = PRODUCTS.find(x => x.id === p.id);
+        const stock = freshP ? freshP.stock : p.stock;
+        if(shoppingCart[key].qty >= stock){
+          showToast(`В наличии только ${stock} шт. — больше добавить нельзя`);
+          return;
+        }
+      }
+      shoppingCart[key].qty+=change;
+      if(shoppingCart[key].qty<=0)delete shoppingCart[key];
+      saveCart();syncCartIndicators();renderCartPage();
+    }
+    function deleteCartItem(key){delete shoppingCart[key];saveCart();syncCartIndicators();renderCartPage();}
+
+    // ── CHECKOUT ──
+    function processCheckoutOrder(){
+      const selectedEntries=Object.entries(shoppingCart).filter(([k])=>cartSelected.has(k));
+      if(selectedEntries.length===0){showToast("Выберите хотя бы один товар!");return;}
+      const fio=document.getElementById("formFio"),phone=document.getElementById("formPhone"),address=document.getElementById("formAddress");
+      [fio,phone,address].forEach(i=>i.classList.remove("invalid-field"));
+      if(!fio.value.trim()){setError(fio,"Заполните ФИО!");return;}
+      if(!phone.value.trim()||phone.value.trim()==="+7"||phone.value.length<11){setError(phone,"Введите телефон!");return;}
+      if(!address.value.trim()){setError(address,"Укажите адрес!");return;}
+      const orderId='#'+Math.random().toString(36).substr(2,8).toUpperCase();
+      const now=new Date();
+      savedOrders.unshift({id:orderId,date:now.toLocaleDateString('ru-RU')+', '+now.toTimeString().slice(0,5),status:['Ожидает оплаты','Ожидает подтверждения'],phone:phone.value.trim(),delivery:document.getElementById("formDelivery").value,items:selectedEntries.map(([,i])=>({name:i.product.name,img:i.product.images[0],qty:i.qty,price:i.product.price})),total:selectedEntries.reduce((a,[,i])=>a+i.product.price*i.qty,0)});
+      saveOrders();
+      // Only the items that were checked get removed from the cart; the rest stay for later.
+      selectedEntries.forEach(([k])=>{delete shoppingCart[k];cartSelected.delete(k);});
+      saveCart();syncCartIndicators();
+      navigateTo("screenPayment");
+    }
+    function setError(el,text){el.classList.add("invalid-field");el.scrollIntoView({behavior:'smooth',block:'center'});el.focus();showToast(text);}
+
+    // ── PAYMENT ──
+    function renderPaymentPage(){
+      const c=document.getElementById("paymentProductsList");c.innerHTML="";let total=0;
+      Object.values(shoppingCart).forEach(item=>{total+=item.product.price*item.qty;const r=document.createElement("div");r.className="pay-prod-row";r.innerHTML=`<span class="pay-prod-name">${item.product.name}</span><span>${item.qty} × ${item.product.price.toLocaleString()}₽</span>`;c.appendChild(r);});
+      document.getElementById("paymentTotalSum").innerText=`${total.toLocaleString()}₽`;
+    }
+    function triggerPaymentUnavailable(){document.getElementById("paymentAlertOverlay").classList.add("show");}
+    function closePaymentAlert(){document.getElementById("paymentAlertOverlay").classList.remove("show");}
+
+    // ── FAVOURITES ──
+    function renderFavCategoryBar(){
+      const root = document.getElementById('favCategoryBar');
+      if (!root) return;
+      root.innerHTML = '';
+      const categories = ['Все', ...CATEGORIES_LIST.filter(c => c.name !== 'Все').map(c => c.name)];
+      categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = `fav-category-pill ${cat === currentFavCategory ? 'active' : ''}`;
+        btn.textContent = cat;
+        btn.onclick = () => {
+          currentFavCategory = cat;
+          renderFavouritesPage();
+        };
+        root.appendChild(btn);
+      });
+    }
+
+    function renderFavouritesPage(){
+      renderFavCategoryBar();
+      const grid=document.getElementById('favouritesGrid');
+      if (!grid) return;
+      grid.innerHTML='';
+      const favP=PRODUCTS.filter(p => favourites.has(p.id) && (currentFavCategory === 'Все' || p.category === currentFavCategory));
+      if(favP.length===0){
+        grid.innerHTML=`<div class="fav-empty" style="grid-column:1/-1"><div class="fav-empty-icon">🤍</div><div class="fav-empty-text">Избранное пусто</div><div style="font-size:13px;color:var(--text-secondary);">Нажмите ❤️ на товаре</div></div>`;
+        return;
+      }
+      favP.forEach(p=>{
+        const sold=isSoldOut(p);
+        const card=document.createElement('div');card.className='prod-card';
+        card.innerHTML=`<div class="prod-img-box"><img src="${p.images[0]}" alt="${p.name}" onclick="viewProductDetails(${p.id})">${sold?'<div class="prod-sold-overlay"><span class="prod-sold-label">Продано</span></div>':''}${prodMenuHtml(p.id)}<button class="prod-heart-btn active" onclick="toggleFav(${p.id}, event, false)"><svg width="14" height="14" viewBox="0 0 24 24" fill="#ff3b30" stroke="#ff3b30" stroke-width="2.2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button></div><div class="prod-details"><div class="prod-title" onclick="viewProductDetails(${p.id})">${p.name}</div><div class="prod-price">${p.price.toLocaleString()} ₽</div><div class="prod-card-actions"><button class="btn-card-cart" onclick="quickAddToCart(${p.id},event)" ${sold?'disabled':''}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></button></div></div>`;
+        grid.appendChild(card);
+      });
+    }
+
+    // ── PROFILE ──
+    function renderProfilePage(){
+      const tg=window.Telegram?.WebApp?.initDataUnsafe?.user;
+      const firstName=tg?.first_name||'Альберт',lastName=tg?.last_name||'',username=tg?.username?'@'+tg.username:'@xqwex0';
+      const initials=(firstName[0]||'A').toUpperCase();
+      // only orders the admin has confirmed (or later) count as purchases
+      const _isConf = o => ['Подтверждён','Отправлен','Выполнен'].includes((Array.isArray(o.status)?o.status:[o.status]).slice(-1)[0]);
+      const _confOrders = savedOrders.filter(_isConf);
+      const totalSpent = _confOrders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+      const totalItemsBought = _confOrders.reduce((sum, order) => sum + (order.items||[]).reduce((s,i)=>s+i.qty,0), 0);
+      const avatarBig=document.getElementById('profileAvatarBig');
+      if (tg?.photo_url) avatarBig.innerHTML=`<img src="${tg.photo_url}" alt="">`;
+      else avatarBig.innerText=initials;
+      document.getElementById('profileUsernameBelow').innerText=username;
+      document.getElementById('profileName').innerText=firstName+(lastName?' '+lastName:'');
+      document.getElementById('profileUsername').innerText=username;
+      document.getElementById('profileTelegramName').innerText=username;
+      document.getElementById('profileBotName').innerText='@'+BOT_USERNAME;
+      document.getElementById('profileOrdersCount').innerText=savedOrders.length;
+      document.getElementById('profileItemsBought').innerText=totalItemsBought;
+      document.getElementById('profilePurchaseSummary').innerText=`${totalSpent.toLocaleString()} ₽`;
+      document.getElementById('profileStatus').innerText=savedOrders.length ? 'Активно' : 'Онлайн';
+      const now=new Date();
+      document.getElementById('profileSince').innerText='В магазине с '+now.toLocaleDateString('ru-RU');
+      const hasActive=savedOrders.some(o=>o.status.includes('Ожидает оплаты'));
+      document.getElementById('profileActiveBadge').style.display=hasActive?'flex':'none';
+      const count=savedOrders.length;
+      document.getElementById('ordersCountBadge').innerText=count+' '+(count===1?'заказ':count<5?'заказа':'заказов');
+      const list=document.getElementById('profileOrdersList');list.innerHTML='';
+      if(count===0){list.innerHTML='<div class="profile-empty">У вас пока нет заказов</div>';return;}
+      savedOrders.forEach(order=>{
+        const card=document.createElement('div');card.className='order-card';
+        const badges=order.status.map(s=>{let cls='badge-yellow';if(s.includes('подтвер')||s.includes('Отправлен'))cls='badge-blue';if(s.includes('Выполнен'))cls='badge-green';if(s.includes('Отмен'))cls='badge-red';return`<span class="order-badge ${cls}">${s}</span>`;}).join('');
+        const items=order.items.map(i=>`<div class="order-product-row"><img src="${i.img}" class="order-product-img" alt=""><span class="order-product-name">${i.name}</span><span class="order-product-qty">${i.qty} шт.</span></div>`).join('');
+        card.innerHTML=`<div style="margin-bottom:4px;"><span class="order-id">Заказ ${order.id}</span></div><div class="order-date">📅 ${order.date}</div><div class="order-status-row">${badges}</div><div class="order-meta-row">📞 ${order.phone}</div><div class="order-meta-row">🚚 ${order.delivery}</div><hr class="order-divider">${items}<div class="order-total-row"><span class="order-total-price">${order.total.toLocaleString()}₽</span><span class="order-total-items">${order.items.length} товар(ов)</span></div><div class="order-actions"><button class="btn-order-pay" onclick="navigateTo('screenPayment')">Оплатить</button><button class="btn-order-cancel" onclick="cancelOrder('${order.id}')">Отменить</button></div>`;
+        list.appendChild(card);
+      });
+    }
+    function cancelOrder(id){const o=savedOrders.find(x=>x.id===id);if(o){o.status=['Отменён'];saveOrders();renderProfilePage();showToast('Заказ отменён');}}
+
+    // ── TOAST ──
+    function showToast(text,isSuccess=false){
+      const t=document.getElementById("toastNode");t.innerText=text;
+      t.classList.toggle("success-toast",isSuccess);t.classList.add("show");
+      clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.classList.remove("show"),3000);
+    }
+
+
+    // ═══ ENHANCEMENTS ═══
+    const ADMIN_EMAIL = 'r99373215@gmail.com';
+    const ADMIN_USERNAME = 'xqwex0';
+    const _tgUser = () => window.Telegram?.WebApp?.initDataUnsafe?.user;
+    const _esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+    // 1. Smooth fade: darken, switch screen, brighten
+    document.body.insertAdjacentHTML('beforeend', '<div id="fadeVeil"></div>');
+    const _nav = navigateTo;
+    navigateTo = function (id) {
+      const v = document.getElementById('fadeVeil'), t = document.getElementById(id);
+      if (!v || !t || t.classList.contains('active')) { _nav(id); return; }
+      v.classList.add('on');
+      setTimeout(() => { _nav(id); requestAnimationFrame(() => v.classList.remove('on')); }, 160);
+    };
+
+    // 2/3. Orders from menu -> orders section, active only
+    let ordersFilter = 'active';
+    function openActiveOrders() {
+      ordersFilter = 'active'; navigateTo('screenProfile');
+      setTimeout(() => document.getElementById('ordersCountBadge')?.scrollIntoView({behavior:'smooth', block:'start'}), 450);
+    }
+    const _rp = renderProfilePage;
+    renderProfilePage = function () {
+      _rp();
+      const list = document.getElementById('profileOrdersList'); if (!list) return;
+      let chips = document.getElementById('ordFilter');
+      if (!chips) { chips = document.createElement('div'); chips.id = 'ordFilter'; chips.className = 'ord-filter'; list.parentNode.insertBefore(chips, list); }
+      chips.innerHTML = [['active','Активные'],['all','Все']].map(([k,l]) => `<button class="${ordersFilter===k?'on':''}" onclick="ordersFilter='${k}';renderProfilePage()">${l}</button>`).join('');
+      [...list.children].forEach((c, i) => { const o = savedOrders[i]; if (o && ordersFilter === 'active' && o.status.join().includes('Отмен')) c.style.display = 'none'; });
+    };
+
+    // 3. Email notification about every new order
+    function sendOrderEmail(o) {
+      const u = _tgUser();
+      const body = {
+        _subject: `Новый заказ ${o.id} — ${Number(o.total).toLocaleString('ru-RU')} ₽`, _template: 'table', _captcha: 'false',
+        'Заказ': o.id, 'Дата': o.date, 'ФИО': o.fio || '—', 'Телефон': o.phone, 'Доставка': o.delivery, 'Адрес': o.address || '—',
+        'Telegram': u ? '@' + (u.username || '—') + ' (id ' + u.id + ')' : '—',
+        'Товары': o.items.map(i => `${i.name} x${i.qty} — ${(i.price * i.qty).toLocaleString('ru-RU')} ₽`).join('; '),
+        'Итого': o.total + ' ₽'
+      };
+      fetch('https://formsubmit.co/ajax/' + ADMIN_EMAIL, { method:'POST', headers:{'Content-Type':'application/json', Accept:'application/json'}, body: JSON.stringify(body) })
+        .then(r => { o.emailed = r.ok; saveOrders(); }).catch(() => { o.emailed = false; saveOrders(); });
+    }
+    const _pco = processCheckoutOrder;
+    processCheckoutOrder = function () {
+      const n = savedOrders.length, fio = document.getElementById('formFio').value.trim(), addr = document.getElementById('formAddress').value.trim();
+      _pco();
+      if (savedOrders.length > n) { const o = savedOrders[0]; o.fio = fio; o.address = addr; o.userId = String(_tgUser()?.id || 'local'); saveOrders(); }
+    };
+
+    // 4. Bans + visitor statistics live in the shared database (checked on every visit)
+    function guestId() {
+      let g = safeGet('shopGuestId', '');
+      if (!g) { g = 'web_' + Math.random().toString(36).slice(2, 12); safeSet('shopGuestId', g); }
+      return g;
+    }
+    function showBan() {
+      if (document.getElementById('banScreen')) return;
+      document.body.insertAdjacentHTML('beforeend', '<div id="banScreen">🚫 Доступ к магазину ограничен.<br>Если это ошибка — напишите в поддержку.</div>');
+    }
+    async function registerVisit() {
+      const t = _tgUser();
+      const id = t?.id ? String(t.id) : guestId();
+      const name = ((t?.first_name || '') + ' ' + (t?.last_name || '')).trim() || 'Гость';
+      try {
+        const r = await sbFetch('/rest/v1/rpc/register_visit', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_id: id, p_name: name, p_username: t?.username || '' })
+        });
+        if (r.ok) {
+          const banned = (await r.json()) === true;
+          safeSet('shopBanned', banned ? '1' : '0');
+          if (banned) showBan();
+        }
+      } catch (e) {
+        if (safeGet('shopBanned', '0') === '1') showBan();
+      }
+    }
+
+    // 5. Brands: local cache (the shared list is loaded from the database in loadRemoteData)
+    { const cb = safeParseJSON(safeGet('shopBrands', 'null'), null); if (Array.isArray(cb)) { BRANDS_LIST.length = 0; BRANDS_LIST.push(...cb); } }
+
+    // 6. Every confirmed order is also stored in the shared database (the admin panel reads it)
+    function pushOrderToDb(o) {
+      if (!o || o.dbSent) return;
+      const u = _tgUser();
+      const data = {
+        date: o.date, status: o.status, fio: o.fio || '', phone: o.phone, tg: o.tg || '',
+        tgId: u ? String(u.id) : '', tgUsername: u ? (u.username || '') : '',
+        delivery: o.delivery, address: o.address || '', payMethod: o.payMethod || '',
+        items: o.items, total: o.total
+      };
+      sbFetch('/rest/v1/orders', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ id: o.id, data })
+      }).then(r => { if (r.ok || r.status === 409) { o.dbSent = true; saveOrders(); } }).catch(() => {});
+    }
+
+    // ═══ ORDER FLOW FIX ═══
+    let lastOrder = null;
+    const _pco2 = processCheckoutOrder;
+    processCheckoutOrder = function () {
+      const tgEl = document.getElementById('formTg'); tgEl.classList.remove('invalid-field');
+      const hasItems = Object.keys(shoppingCart).some(k => cartSelected.has(k));
+      if (hasItems && document.getElementById('formFio').value.trim() && document.getElementById('formAddress').value.trim()) {
+        const tg = tgEl.value.trim().replace(/^https?:\/\/t\.me\//, '').replace(/^@/, '');
+        if (!/^[A-Za-z0-9_]{4,32}$/.test(tg)) { setError(tgEl, 'Введите ваш Telegram (@username)'); return; }
+      }
+      const n = savedOrders.length;
+      _pco2();
+      if (savedOrders.length > n) {
+        lastOrder = savedOrders[0];
+        lastOrder.tg = '@' + tgEl.value.trim().replace(/^https?:\/\/t\.me\//, '').replace(/^@/, '');
+        saveOrders(); renderPaymentPage();
+      }
+    };
+    renderPaymentPage = function () {
+      const o = lastOrder || savedOrders[0]; if (!o) return;
+      const c = document.getElementById('paymentProductsList'); c.innerHTML = '';
+      o.items.forEach(i => { const r = document.createElement('div'); r.className = 'pay-prod-row'; r.innerHTML = `<span class="pay-prod-name">${_esc(i.name)}</span><span>${i.qty} × ${Number(i.price).toLocaleString('ru-RU')} ₽</span>`; c.appendChild(r); });
+      document.getElementById('paymentTotalSum').innerText = Number(o.total).toLocaleString('ru-RU') + ' ₽';
+    };
+    // email: sent when the client picks a payment method
+    sendOrderEmail = function (o) {
+      const u = _tgUser();
+      const data = {
+        _subject: `Новый заказ ${o.id} — ${Number(o.total).toLocaleString('ru-RU')} ₽`, _template: 'table', _captcha: 'false',
+        'Заказ': o.id, 'Дата': o.date, 'Оплата': o.payMethod || '—', 'ФИО': o.fio || '—', 'Телефон': o.phone,
+        'Telegram клиента': o.tg || '—', 'Telegram аккаунт': u ? '@' + (u.username || '—') + ' (id ' + u.id + ')' : '—',
+        'Доставка': o.delivery, 'Адрес': o.address || '—',
+        'Товары': o.items.map(i => `${i.name} x${i.qty} — ${(i.price * i.qty).toLocaleString('ru-RU')} ₽`).join('; '), 'Итого': o.total + ' ₽'
+      };
+      const viaForm = () => { // fallback that needs no CORS
+        try {
+          let fr = document.getElementById('mailFrame');
+          if (!fr) { fr = document.createElement('iframe'); fr.name = fr.id = 'mailFrame'; fr.style.display = 'none'; document.body.appendChild(fr); }
+          const f = document.createElement('form'); f.method = 'POST'; f.target = 'mailFrame'; f.style.display = 'none';
+          f.action = 'https://formsubmit.co/' + ADMIN_EMAIL;
+          Object.entries(data).forEach(([k, v]) => { const i = document.createElement('input'); i.type = 'hidden'; i.name = k; i.value = v; f.appendChild(i); });
+          document.body.appendChild(f); f.submit(); setTimeout(() => f.remove(), 3000); o.emailed = true; saveOrders();
+        } catch (e) { o.emailed = false; saveOrders(); }
+      };
+      fetch('https://formsubmit.co/ajax/' + ADMIN_EMAIL, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(data) })
+        .then(r => r.json()).then(j => {
+          o.emailed = String(j.success) === 'true'; saveOrders();
+          const dev = /^(localhost|127\.|192\.168\.)/.test(location.hostname) || document.getElementById('adminMenuItem')?.style.display === 'flex';
+          if (dev) showToast(o.emailed ? 'Email: ' + (j.message || 'отправлено').slice(0, 90) : 'Email ошибка: ' + (j.message || 'неизвестно').slice(0, 90), o.emailed);
+          console.log('FormSubmit response:', j);
+        })
+        .catch(viaForm);
+    };
+    triggerPaymentUnavailable = function (method) {
+      const o = lastOrder || savedOrders[0];
+      if (o && Date.now() - (o.sentAt || 0) > 20000) { o.sent = true; o.sentAt = Date.now(); o.payMethod = method || '—'; o.status = ['Ожидает подтверждения']; saveOrders(); sendOrderEmail(o); }
+      document.getElementById('paymentAlertOverlay').classList.add('show');
+    };
+
+
+    // ═══ PERSISTENCE: localStorage + Telegram CloudStorage backup ═══
+    const CLOUD_KEYS = ['shopCart', 'shopFavs', 'shopOrders', 'shopForm'];
+    const _cloud = window.Telegram?.WebApp?.CloudStorage;
+    function cloudPut(key, val) {
+      if (!_cloud || !CLOUD_KEYS.includes(key)) return;
+      try {
+        const N = 3500, parts = Math.ceil(val.length / N) || 1;
+        if (parts > 40) return;
+        for (let i = 0; i < parts; i++) _cloud.setItem(`${key}_${i}`, val.slice(i * N, (i + 1) * N));
+        _cloud.setItem(`${key}_n`, String(parts));
+      } catch (e) {}
+    }
+    const _safeSet0 = safeSet;
+    safeSet = function (key, value) { _safeSet0(key, value); cloudPut(key, value); };
+    function cloudGet(key) {
+      return new Promise(res => {
+        if (!_cloud) return res(null);
+        _cloud.getItem(`${key}_n`, (e, n) => {
+          n = parseInt(n); if (e || !n) return res(null);
+          const ks = Array.from({ length: n }, (_, i) => `${key}_${i}`);
+          _cloud.getItems(ks, (e2, o) => res(e2 || !o ? null : ks.map(k => o[k] || '').join('')));
+        });
+      });
+    }
+    // checkout form is remembered too
+    const FORM_IDS = ['formFio', 'formPhone', 'formTg', 'formDelivery', 'formAddress'];
+    function saveForm() { const o = {}; FORM_IDS.forEach(i => { const e = document.getElementById(i); if (e) o[i] = e.value; }); safeSet('shopForm', JSON.stringify(o)); }
+    function loadForm() { const o = safeParseJSON(safeGet('shopForm', '{}'), {}); FORM_IDS.forEach(i => { const e = document.getElementById(i); if (e && o[i]) e.value = o[i]; }); }
+    FORM_IDS.forEach(i => { const e = document.getElementById(i); if (e) { e.addEventListener('input', saveForm); e.addEventListener('change', saveForm); } });
+    loadForm();
+    // restore from Telegram cloud when local data is missing (new device / cleared cache)
+    (async function restoreFromCloud() {
+      if (!_cloud) return;
+      let changed = false;
+      for (const k of CLOUD_KEYS) {
+        if (safeGet(k, null) !== null) continue;
+        const v = await cloudGet(k);
+        if (v) { _safeSet0(k, v); changed = true; }
+      }
+      if (!changed) return;
+      PRODUCTS = safeParseJSON(safeGet('shopProducts', 'null'), PRODUCTS);
+      shoppingCart = safeParseJSON(safeGet('shopCart', '{}'), {});
+      savedOrders = safeParseJSON(safeGet('shopOrders', '[]'), []);
+      const f = safeParseJSON(safeGet('shopFavs', '[]'), []); favourites = new Set(Array.isArray(f) ? f : []);
+      { const sb = safeParseJSON(safeGet('shopBrands', 'null'), null); if (Array.isArray(sb)) { BRANDS_LIST.length = 0; BRANDS_LIST.push(...sb); } }
+      loadForm(); renderItemsGrid(); syncCartIndicators(); syncFavBadge();
+    })();
+
+    // Orders are also stored in the shared database
+    const _sendOrderEmail2 = sendOrderEmail;
+    sendOrderEmail = function (o) { _sendOrderEmail2(o); pushOrderToDb(o); };
+    window.addEventListener('load', () => {
+      savedOrders.filter(o => o.sent && o.emailed !== true).forEach(o => _sendOrderEmail2(o));
+      savedOrders.filter(o => o.sent && !o.dbSent).forEach(o => pushOrderToDb(o));
+    });
+    registerVisit();
+    // Order statuses set in the admin panel are shown to the customer
+    async function syncOrderStatuses(rerender) {
+      const ids = savedOrders.filter(o => o.dbSent).map(o => o.id);
+      if (!ids.length) return;
+      try {
+        const r = await sbFetch('/rest/v1/rpc/get_order_statuses', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ p_ids: ids })
+        });
+        if (!r.ok) return;
+        const rows = await r.json();
+        let changed = false;
+        rows.forEach(row => {
+          const o = savedOrders.find(x => x.id === row.id);
+          if (o && Array.isArray(row.status) && row.status.length && JSON.stringify(o.status) !== JSON.stringify(row.status)) { o.status = row.status; changed = true; }
+        });
+        if (changed) { saveOrders(); if (rerender) _renderProfilePageOrig(); }
+      } catch (e) {}
+    }
+    const _renderProfilePageOrig = renderProfilePage;
+    renderProfilePage = function () { _renderProfilePageOrig(); syncOrderStatuses(true); };
+    const _cancelOrderOrig = cancelOrder;
+    cancelOrder = function (id) {
+      _cancelOrderOrig(id);
+      sbFetch('/rest/v1/rpc/cancel_order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ p_id: id }) }).catch(() => {});
+    };
+    window.addEventListener('load', () => setTimeout(() => syncOrderStatuses(true), 1500));
+
+    window.onload = init;
+  </script>
+</body>
+</html>
